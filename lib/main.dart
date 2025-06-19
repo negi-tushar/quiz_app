@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:quiz_app/common/string.dart';
 import 'package:quiz_app/screens/homescreen.dart';
 import 'package:quiz_app/screens/username_scren.dart';
+import 'package:quiz_app/service/quiz_service.dart';
 import 'package:quiz_app/service/shared_pref_service.dart';
 
-void main() {
+void main() async {
+  await QuizService.initializeQuestions();
   runApp(const MyApp());
 }
 

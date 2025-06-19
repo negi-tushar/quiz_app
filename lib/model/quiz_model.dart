@@ -3,7 +3,8 @@ class Question {
   final String questionText;
   final List<String> options;
   final String correctAnswer;
-  final String? explanation; // Optional explanation for the answer
+  final String category;
+  final String? explanation;
 
   Question({
     required this.id,
@@ -11,6 +12,7 @@ class Question {
     required this.options,
     required this.correctAnswer,
     this.explanation,
+    required this.category,
   });
 
   // Factory constructor to create a Question object from a JSON map
@@ -21,6 +23,7 @@ class Question {
       options: List<String>.from(json['options'] as List),
       correctAnswer: json['correctAnswer'] as String,
       explanation: json['explanation'] as String?,
+      category: json['category'] as String,
     );
   }
 }

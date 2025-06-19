@@ -1,18 +1,22 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:ui'; // For ImageFilter.blur
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // For HapticFeedback
 import 'package:quiz_app/common/quiz_data.dart'; // User's specified path
 import 'package:quiz_app/model/quiz_model.dart'; // User's specified path
 import 'package:quiz_app/screens/result_screen.dart';
+import 'package:quiz_app/service/quiz_service.dart';
 
 class QuizScreen extends StatefulWidget {
   final int numberOfQuestions;
   final int questionTimerSeconds;
+  final String? category;
 
-  const QuizScreen({super.key, required this.numberOfQuestions, required this.questionTimerSeconds});
+  const QuizScreen({super.key, required this.numberOfQuestions, required this.questionTimerSeconds, this.category});
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -27,6 +31,7 @@ class _QuizScreenState extends State<QuizScreen> {
 
   Timer? _timer;
   int _currentTimerSeconds = 0;
+  bool _isDataLoaded = false;
 
   @override
   void initState() {
@@ -43,10 +48,38 @@ class _QuizScreenState extends State<QuizScreen> {
 
   // Load questions from the quizData string (from common/quiz_data.dart)
   void _loadQuestions() {
-    final List<dynamic> jsonList = json.decode(quizData);
-    List<Question> allQuestions = jsonList.map((json) => Question.fromJson(json)).toList();
-    allQuestions.shuffle(); // Shuffle questions for randomness
-    _questions = allQuestions.take(widget.numberOfQuestions).toList();
+    List<Question> fetchedQuestions;
+    if (widget.category != null) {
+      // Fetch random questions from the specified category
+      fetchedQuestions = QuizService.getRandomQuestionsByCategory(widget.category!, widget.numberOfQuestions);
+    } else {
+      // If no category specified (e.g., for general 'Quick Quizzes'),
+      // get random questions from all available questions.
+      final allAvailableQuestions = QuizService.getAllQuestions();
+      allAvailableQuestions.shuffle(); // Shuffle all
+      fetchedQuestions = allAvailableQuestions.sublist(
+        0,
+        widget.numberOfQuestions.clamp(0, allAvailableQuestions.length),
+      );
+    }
+
+    if (fetchedQuestions.isEmpty) {
+      // Handle scenario where no questions could be loaded
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('No questions available for this quiz criteria.')));
+        Navigator.of(context).pop(); // Go back to the previous screen (Home)
+      });
+      return; // Exit without setting state if no questions
+    }
+
+    setState(() {
+      _questions = fetchedQuestions;
+      _isDataLoaded = true;
+      _currentQuestionIndex = 0;
+      _score = 0;
+    });
   }
 
   // Starts or resets the timer for the current question
@@ -115,13 +148,19 @@ class _QuizScreenState extends State<QuizScreen> {
 
   // Displays the quiz result screen
   void _showResultScreen() {
-    Navigator.of(context).pushReplacement(
+    Navigator.pushReplacement(
+      context,
       MaterialPageRoute(
-        builder: (context) => ResultScreen(
+        builder: (ctx) => ResultScreen(
           score: _score,
           totalQuestions: _questions.length,
-          // Pop all routes until the first one (HomeScreen)
-          onRetakeQuiz: () => Navigator.of(context).popUntil((route) => route.isFirst),
+          onRetakeQuiz: () {
+            // Logic to go back to home or restart quiz
+            Navigator.popUntil(ctx, (route) => route.isFirst); // Example: Go back to the very first screen
+            // Or if you have a specific home screen route:
+            // Navigator.pushAndRemoveUntil(ctx, MaterialPageRoute(builder: (_) => HomeScreen()), (route) => false);
+          },
+          onReviewAnswers: () {},
         ),
       ),
     );
@@ -169,13 +208,13 @@ class _QuizScreenState extends State<QuizScreen> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: theme.brightness == Brightness.light
-                  ? [Colors.yellow.shade100, Colors.white, Colors.yellow.shade50] // Light gradient
-                  : [Colors.grey.shade900, Colors.black, Colors.grey.shade800], // Dark gradient
+                  ? [colorScheme.surfaceContainerHighest, colorScheme.surface]
+                  : [colorScheme.surfaceContainerHigh, colorScheme.surface],
             ),
           ),
           child: Column(
             children: [
-              const SizedBox(height: 40), // Top padding for status bar/safe area
+              if (Platform.isIOS) const SizedBox(height: 80) else const SizedBox(height: 20),
               // Linear Progress Indicator for Timer (moved to top)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -189,27 +228,10 @@ class _QuizScreenState extends State<QuizScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
-              // Custom Header: App Title
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Align(
-                  alignment: Alignment.centerLeft, // Align title to left
-                  child: Text(
-                    'Flutter Quiz',
-                    style: textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onBackground,
-                      fontSize: 30, // Larger title
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
+
               // Header Stats Section: Question, Score, Timer
               _buildHeaderStats(theme, colorScheme, textTheme),
-              const SizedBox(height: 20),
-              Expanded(
+              Flexible(
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 600), // Slightly longer animation
                   transitionBuilder: (Widget child, Animation<double> animation) {
@@ -227,9 +249,9 @@ class _QuizScreenState extends State<QuizScreen> {
                       child: FadeTransition(opacity: fadeAnimation, child: child),
                     );
                   },
-                  child: _buildQuestionContainer(currentQuestion, textTheme, colorScheme),
                   // The key is essential for AnimatedSwitcher to recognize a content change
                   key: ValueKey(currentQuestion.id),
+                  child: _buildQuestionContainer(currentQuestion, textTheme, colorScheme),
                 ),
               ),
               const SizedBox(height: 30), // Increased bottom padding for aesthetic balance
@@ -243,23 +265,14 @@ class _QuizScreenState extends State<QuizScreen> {
   // Helper widget for the header stats (Question, Score, Timer)
   Widget _buildHeaderStats(ThemeData theme, ColorScheme colorScheme, TextTheme textTheme) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Container(
-        padding: const EdgeInsets.all(18),
-        // decoration: BoxDecoration(
-        //   // Frosted glass effect for the header container
-        //   color: colorScheme.surface.withOpacity(0.25),
-        //   borderRadius: BorderRadius.circular(25),
-        //   border: Border.all(color: colorScheme.surface.withOpacity(0.3)),
-        //   boxShadow: [
-        //     BoxShadow(
-        //       color: Colors.black.withOpacity(0.08),
-        //       spreadRadius: 1,
-        //       blurRadius: 10,/
-        //       offset: const Offset(0, 4),
-        //     ),
-        //   ],
-        // ),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          // Frosted glass effect for the header container
+          color: colorScheme.surface.withAlpha(100),
+          borderRadius: BorderRadius.circular(25),
+        ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
@@ -311,7 +324,7 @@ class _QuizScreenState extends State<QuizScreen> {
           style: textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
             color: colorScheme.onSurface,
-            fontSize: 24,
+            fontSize: 20,
           ),
         ),
       ],
@@ -321,19 +334,12 @@ class _QuizScreenState extends State<QuizScreen> {
   // Helper widget for the main question and options container
   Widget _buildQuestionContainer(Question question, TextTheme textTheme, ColorScheme colorScheme) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      padding: const EdgeInsets.all(28), // Increased padding
+      margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+      padding: const EdgeInsets.all(20), // Increased padding
       decoration: BoxDecoration(
-        // Modern gradient for the question container
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            colorScheme.surface.withOpacity(0.15), // Very subtle transparent base
-            colorScheme.surface.withOpacity(0.05), // More transparent end
-          ],
-        ),
-        borderRadius: BorderRadius.circular(30), // More rounded corners
+        color: colorScheme.surface,
+
+        borderRadius: BorderRadius.circular(15), // More rounded corners
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1), // Soft shadow
@@ -347,94 +353,67 @@ class _QuizScreenState extends State<QuizScreen> {
           width: 1.5,
         ),
       ),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), // Frosted glass effect
-        child: SingleChildScrollView(
-          // Allows content to scroll if it overflows
-          child: Column(
-            mainAxisSize: MainAxisSize.min, // Keep column compact
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                question.questionText,
-                textAlign: TextAlign.center,
-                style: textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: colorScheme.onSurface,
-                  fontSize: 24, // Slightly larger question text
-                  shadows: [
-                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 2, offset: const Offset(1, 1)),
-                  ],
-                ),
+      child: SingleChildScrollView(
+        // Allows content to scroll if it overflows
+        child: Column(
+          mainAxisSize: MainAxisSize.min, // Keep column compact
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              question.questionText,
+              textAlign: TextAlign.start,
+              style: textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w500,
+                color: colorScheme.onSurface,
+                fontSize: 20, // Slightly larger question text
+                shadows: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 2, offset: const Offset(1, 1))],
               ),
-              const SizedBox(height: 35), // Increased spacing after question
-              // Display options as custom-styled interactive containers
-              ...question.options
-                  .map(
-                    (option) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8), // Adjusted vertical padding
-                      child: Material(
-                        // Provides Material Design visual responses (splash, highlight)
-                        color: _getOptionContainerColor(option, colorScheme), // Background color
-                        borderRadius: BorderRadius.circular(18), // Match inner container/InkWell
-                        elevation: 4, // Subtle elevation for the button effect
-                        shadowColor: Colors.black.withOpacity(0.2), // Shadow for the button effect
-                        child: InkWell(
-                          onTap: _isAnswerLocked || _currentTimerSeconds == 0
-                              ? null // Disable tap if answer is locked or time is up
-                              : () => _checkAnswer(option),
-                          borderRadius: BorderRadius.circular(18), // Match Material's border radius
-                          splashColor: colorScheme.primary.withOpacity(0.3), // Splash effect color
-                          highlightColor: Colors.transparent, // Avoid default highlight color
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 20,
-                              horizontal: 10,
-                            ), // Padding for text inside
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(18),
-                              border: Border.all(
-                                color: _selectedAnswer == option && _isAnswerLocked
-                                    ? (_selectedAnswer == question.correctAnswer
-                                          ? Colors.green.shade700
-                                          : Colors.red.shade700)
-                                    : colorScheme.surface.withOpacity(0.4), // Default border for options
-                                width: _selectedAnswer == option && _isAnswerLocked
-                                    ? 3
-                                    : 1.0, // Thicker border on selected/feedback
-                              ),
-                            ),
-                            child: Text(
-                              option,
-                              textAlign: TextAlign.center,
-                              style: textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w500,
-                                color: colorScheme.onSurface,
-                                fontSize: 18,
-                              ),
-                            ),
-                          ),
+            ),
+            const SizedBox(height: 20), // Increased spacing after question
+            // Display options as custom-styled interactive containers
+            ...question.options.map(
+              (option) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8), // Adjusted vertical padding
+                child: Material(
+                  // Provides Material Design visual responses (splash, highlight)
+                  color: _getOptionContainerColor(option, colorScheme), // Background color
+                  borderRadius: BorderRadius.circular(18), // Match inner container/InkWell
+                  child: InkWell(
+                    onTap: _isAnswerLocked || _currentTimerSeconds == 0
+                        ? null // Disable tap if answer is locked or time is up
+                        : () => _checkAnswer(option),
+                    borderRadius: BorderRadius.circular(18), // Match Material's border radius
+                    highlightColor: Colors.transparent, // Avoid default highlight color
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20), // Padding for text inside
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: _selectedAnswer == option && _isAnswerLocked
+                              ? (_selectedAnswer == question.correctAnswer
+                                    ? Colors.green.shade700
+                                    : Colors.red.shade700)
+                              : colorScheme.primary.withAlpha(100), // Default border for options
+                          width: _selectedAnswer == option && _isAnswerLocked
+                              ? 3
+                              : 1.0, // Thicker border on selected/feedback
+                        ),
+                      ),
+                      child: Text(
+                        option,
+                        textAlign: TextAlign.start,
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.onSurface,
+                          fontSize: 17,
                         ),
                       ),
                     ),
-                  )
-                  .toList(),
-              const SizedBox(height: 25), // Spacing before explanation
-              // Explanation text shown only when an answer is locked
-              if (_isAnswerLocked)
-                Text(
-                  _selectedAnswer == null && _currentTimerSeconds == 0
-                      ? 'Time\'s up! The correct answer was: ${question.correctAnswer}'
-                      : (question.explanation?.isNotEmpty == true ? 'Explanation: ${question.explanation}' : ''),
-                  style: textTheme.bodyLarge?.copyWith(
-                    fontStyle: FontStyle.italic,
-                    color: colorScheme.onSurface.withOpacity(0.8),
-                    fontSize: 16,
                   ),
-                  textAlign: TextAlign.center,
                 ),
-            ],
-          ),
+              ),
+            ),
+          ],
         ),
       ),
     );
