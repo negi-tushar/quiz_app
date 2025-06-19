@@ -1,6 +1,8 @@
 // lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
-import 'package:quiz_app/screens/quiz_screen.dart'; // Import QuizScreen
+import 'package:quiz_app/common/string.dart';
+import 'package:quiz_app/screens/quiz_screen.dart';
+import 'package:quiz_app/service/shared_pref_service.dart'; // Import QuizScreen
 
 class HomeScreen extends StatefulWidget {
   final String userName; // Accept username as a parameter
@@ -115,7 +117,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               elevation: 4, // Keep some elevation for AppBar
               floating: true, // AppBar can float above content
               snap: true,
-              expandedHeight: 70.0, // A bit taller AppBar
+              expandedHeight: 100.0, // A bit taller AppBar
               flexibleSpace: FlexibleSpaceBar(
                 background: Container(
                   decoration: BoxDecoration(
@@ -142,7 +144,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     child: SlideTransition(
                       position: _slideAnimation,
                       child: Text(
-                        'Hello, ${widget.userName}!', // Use widget.userName for StatefulWidget
+                        'Hello, ${SharedPrefService.getData(userNameKey) ?? "Guest"}', // Use widget.userName for StatefulWidget
                         textAlign: TextAlign.center,
                         style: textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.w800, // Make it extra bold
@@ -156,47 +158,22 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     ),
                   ),
                   const SizedBox(height: 30),
-                  Text(
-                    'Choose Your Quiz!',
-                    textAlign: TextAlign.center,
-                    style: textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onBackground, // Use themed text color for background
-                      fontSize: 28, // Adjusted font size
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-                  // Quiz Length Buttons
-                  _buildQuizCategoryButton(
-                    context,
-                    'Fast Quiz (10 Questions)',
-                    10,
-                    10, // 10 seconds per question for fast quiz
-                  ),
-                  const SizedBox(height: 20),
-                  _buildQuizCategoryButton(
-                    context,
-                    'Medium Quiz (15 Questions)',
-                    15,
-                    15, // 15 seconds per question
-                  ),
-                  const SizedBox(height: 20),
-                  _buildQuizCategoryButton(
-                    context,
-                    'Long Quiz (20 Questions)',
-                    20,
-                    20, // 20 seconds per question
-                  ),
-                  const SizedBox(height: 40), // Separator for new section
+
                   // Explore Categories Section
                   Text(
                     'Explore Categories',
-                    textAlign: TextAlign.center,
+                    textAlign: TextAlign.left, // Aligned to left
                     style: textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: colorScheme.onBackground,
-                      fontSize: 24,
+                      fontSize: 26,
                     ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Dive into quizzes across various exciting topics.',
+                    textAlign: TextAlign.left,
+                    style: textTheme.bodyMedium?.copyWith(color: colorScheme.onBackground.withOpacity(0.7)),
                   ),
                   const SizedBox(height: 20),
                   SizedBox(
@@ -210,16 +187,85 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       },
                     ),
                   ),
+                  const SizedBox(height: 40), // Separator for new section
+                  // Quick Quizzes Section
+                  Text(
+                    'Quick Quizzes',
+                    textAlign: TextAlign.left, // Aligned to left
+                    style: textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onBackground,
+                      fontSize: 26,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Challenge yourself with timed quizzes based on question count!',
+                    textAlign: TextAlign.left,
+                    style: textTheme.bodyMedium?.copyWith(color: colorScheme.onBackground.withOpacity(0.7)),
+                  ),
+                  const SizedBox(height: 20),
+                  _buildQuickQuizButton(
+                    context,
+                    'Fast Quiz',
+                    '10 Questions | 10s per Q',
+                    10,
+                    10,
+                    Icons.flash_on, // Icon for fast quiz
+                  ),
+                  const SizedBox(height: 15),
+                  _buildQuickQuizButton(
+                    context,
+                    'Medium Quiz',
+                    '15 Questions | 15s per Q',
+                    15,
+                    15,
+                    Icons.timer, // Icon for medium quiz
+                  ),
+                  const SizedBox(height: 15),
+                  _buildQuickQuizButton(
+                    context,
+                    'Long Quiz',
+                    '20 Questions | 20s per Q',
+                    20,
+                    20,
+                    Icons.hourglass_empty, // Icon for long quiz
+                  ),
+                  const SizedBox(height: 40), // Separator for Featured/More Options
+                  // Featured Quiz / Daily Challenge Section
+                  Text(
+                    'Daily Challenge',
+                    textAlign: TextAlign.left,
+                    style: textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onBackground,
+                      fontSize: 26,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Test your skills with today\'s special quiz!',
+                    textAlign: TextAlign.left,
+                    style: textTheme.bodyMedium?.copyWith(color: colorScheme.onBackground.withOpacity(0.7)),
+                  ),
+                  const SizedBox(height: 20),
+                  _buildFeaturedQuizCard(context), // New featured quiz card
                   const SizedBox(height: 40), // Separator for More Options
                   // More Options Section
                   Text(
                     'More Options',
-                    textAlign: TextAlign.center,
+                    textAlign: TextAlign.left,
                     style: textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: colorScheme.onBackground,
-                      fontSize: 24,
+                      fontSize: 26,
                     ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Discover additional features and challenges.',
+                    textAlign: TextAlign.left,
+                    style: textTheme.bodyMedium?.copyWith(color: colorScheme.onBackground.withOpacity(0.7)),
                   ),
                   const SizedBox(height: 20),
                   _buildOptionCard(context, 'Browse All Quizzes', Icons.list_alt, () {
@@ -239,25 +285,35 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  // Helper method to build quiz length buttons
-  Widget _buildQuizCategoryButton(BuildContext context, String title, int numberOfQuestions, int questionTimerSeconds) {
+  // Helper method to build Quick Quiz buttons with enhanced UI
+  Widget _buildQuickQuizButton(
+    BuildContext context,
+    String title,
+    String subtitle,
+    int numberOfQuestions,
+    int questionTimerSeconds,
+    IconData icon,
+  ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
 
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.primary.withOpacity(0.3), // Shadow color based on primary
-            spreadRadius: 2,
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+            color: colorScheme.secondary.withOpacity(0.2), // Softer shadow based on secondary
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
         gradient: LinearGradient(
-          // Gradient for buttons
-          colors: [colorScheme.primary, colorScheme.primary.withOpacity(0.8)],
+          // More vibrant gradient for quick quiz buttons
+          colors: theme.brightness == Brightness.light
+              ? [Colors.green.shade300, Colors.lightGreen.shade400] // Greenish for quick quizzes (light mode)
+              : [Colors.green.shade700, Colors.green.shade900], // Darker green (dark mode)
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -272,20 +328,38 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           );
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent, // Make button transparent to show Container's gradient
-          foregroundColor: colorScheme.onPrimary, // Text color on primary
-          padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 30), // More padding
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          elevation: 0, // No intrinsic elevation as Container handles shadow
+          backgroundColor: Colors.transparent, // Transparent to show Container's gradient
+          foregroundColor: Colors.white, // White text on vibrant buttons
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 25), // Adjusted padding
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          elevation: 0, // No intrinsic elevation
         ),
-        child: Text(
-          title,
-          textAlign: TextAlign.center,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontSize: 22,
-            fontWeight: FontWeight.w700, // Bolder text
-            color: colorScheme.onPrimary, // Ensure text color is from button style's foreground
-          ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Icon(icon, size: 35, color: Colors.white), // Icon with white color
+            const SizedBox(width: 15),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: textTheme.titleLarge?.copyWith(
+                      fontSize: 24, // Larger title
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: textTheme.bodyMedium?.copyWith(fontSize: 16, color: Colors.white.withOpacity(0.8)),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios, size: 25, color: Colors.white.withOpacity(0.8)), // Forward arrow
+          ],
         ),
       ),
     );
@@ -304,7 +378,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       },
       child: Container(
         width: 140, // Fixed width for category cards
-        margin: const EdgeInsets.only(right: 15),
+        margin: const EdgeInsets.only(right: 15, bottom: 10),
+
         decoration: BoxDecoration(
           color: theme.cardColor, // Use themed card color
           borderRadius: BorderRadius.circular(18),
@@ -384,6 +459,83 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
             Icon(Icons.arrow_forward_ios, size: 20, color: colorScheme.onSurface.withOpacity(0.6)), // Forward arrow
           ],
+        ),
+      ),
+    );
+  }
+
+  // New helper method to build the featured quiz/daily challenge card
+  Widget _buildFeaturedQuizCard(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.primary.withOpacity(0.2),
+            spreadRadius: 2,
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+        gradient: LinearGradient(
+          // Eye-catching gradient for featured card
+          colors: theme.brightness == Brightness.light
+              ? [colorScheme.primary.withOpacity(0.8), colorScheme.primary]
+              : [Colors.yellow.shade700, Colors.yellow.shade900],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Material(
+        // Use Material to apply ink effect on tap
+        color: Colors.transparent, // Transparent to show Container's gradient
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          onTap: () {
+            // TODO: Navigate to a specific "Daily Challenge" quiz
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Starting Daily Challenge!')));
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const QuizScreen(
+                  numberOfQuestions: 10, // Example: Daily challenge is always 10 questions
+                  questionTimerSeconds: 12, // Example: Slightly harder timer
+                ),
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(20),
+          splashColor: Colors.white.withOpacity(0.2), // Splash effect color
+          child: Padding(
+            padding: const EdgeInsets.all(25.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.star, size: 35, color: Colors.white),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Daily Challenge',
+                      style: textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 28,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 15),
+                Text(
+                  'Complete today\'s unique quiz and climb the ranks!',
+                  style: textTheme.bodyLarge?.copyWith(color: Colors.white.withOpacity(0.9), fontSize: 18),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
