@@ -6,6 +6,8 @@ import 'package:quiz_app/service/quiz_service.dart';
 import 'package:quiz_app/service/shared_pref_service.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await SharedPrefService.init();
   await QuizService.initializeQuestions();
   runApp(const MyApp());
 }

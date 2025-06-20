@@ -1,7 +1,8 @@
+// lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
-import 'package:quiz_app/common/string.dart';
-import 'package:quiz_app/screens/quiz_screen.dart';
-import 'package:quiz_app/service/shared_pref_service.dart';
+import 'package:quiz_app/screens/quiz_screen.dart'; // Import QuizScreen
+import 'package:quiz_app/common/string.dart'; // Assuming this defines userNameKey
+import 'package:quiz_app/service/shared_pref_service.dart'; // Assuming this provides SharedPrefService
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -10,10 +11,27 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _opacityAnimation;
-  late Animation<Offset> _slideAnimation;
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+  // Controller for the initial "Hello, User" animation
+  late AnimationController _welcomeAnimationController;
+  late Animation<double> _welcomeOpacityAnimation;
+  late Animation<Offset> _welcomeSlideAnimation;
+
+  // Controller for the staggered list content animation
+  late AnimationController _contentAnimationController;
+
+  // Animations for each major section
+  late Animation<double> _categoriesOpacity;
+  late Animation<Offset> _categoriesSlide;
+
+  late Animation<double> _quickQuizzesOpacity;
+  late Animation<Offset> _quickQuizzesSlide;
+
+  late Animation<double> _dailyChallengeOpacity;
+  late Animation<Offset> _dailyChallengeSlide;
+
+  late Animation<double> _moreOptionsOpacity;
+  late Animation<Offset> _moreOptionsSlide;
 
   String _userName = 'Guest';
 
@@ -50,19 +68,84 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     super.initState();
     _loadUserName();
 
-    _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
+    // Initialize welcome animation controller
+    _welcomeAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 1000), // Duration for welcome text
+      vsync: this,
+    );
 
-    _opacityAnimation = Tween<double>(
+    _welcomeOpacityAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
+    ).animate(CurvedAnimation(parent: _welcomeAnimationController, curve: Curves.easeIn));
 
-    _slideAnimation = Tween<Offset>(
+    _welcomeSlideAnimation = Tween<Offset>(
       begin: const Offset(0.0, 0.05),
       end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+    ).animate(CurvedAnimation(parent: _welcomeAnimationController, curve: Curves.easeOutCubic));
 
-    _controller.forward();
+    // Initialize content animation controller for staggered effects
+    _contentAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 1500), // Total duration for all content
+      vsync: this,
+    );
+
+    // Define staggered animations for each section
+    _categoriesOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _contentAnimationController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut), // Starts early, ends mid-way
+      ),
+    );
+    _categoriesSlide = Tween<Offset>(begin: const Offset(0.0, 0.1), end: Offset.zero).animate(
+      CurvedAnimation(
+        parent: _contentAnimationController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    _quickQuizzesOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _contentAnimationController,
+        curve: const Interval(0.2, 0.8, curve: Curves.easeOut), // Starts a bit later
+      ),
+    );
+    _quickQuizzesSlide = Tween<Offset>(begin: const Offset(0.0, 0.1), end: Offset.zero).animate(
+      CurvedAnimation(
+        parent: _contentAnimationController,
+        curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    _dailyChallengeOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _contentAnimationController,
+        curve: const Interval(0.4, 0.9, curve: Curves.easeOut), // Starts even later
+      ),
+    );
+    _dailyChallengeSlide = Tween<Offset>(begin: const Offset(0.0, 0.1), end: Offset.zero).animate(
+      CurvedAnimation(
+        parent: _contentAnimationController,
+        curve: const Interval(0.4, 0.9, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    _moreOptionsOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _contentAnimationController,
+        curve: const Interval(0.6, 1.0, curve: Curves.easeOut), // Last to animate
+      ),
+    );
+    _moreOptionsSlide = Tween<Offset>(begin: const Offset(0.0, 0.1), end: Offset.zero).animate(
+      CurvedAnimation(
+        parent: _contentAnimationController,
+        curve: const Interval(0.6, 1.0, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    // Start all animations
+    _welcomeAnimationController.forward();
+    _contentAnimationController.forward();
   }
 
   Future<void> _loadUserName() async {
@@ -76,7 +159,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   @override
   void dispose() {
-    _controller.dispose();
+    _welcomeAnimationController.dispose();
+    _contentAnimationController.dispose();
     super.dispose();
   }
 
@@ -129,16 +213,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
+              // Provides spacing from the top system bar and AppBar height
               child: SizedBox(height: AppBar().preferredSize.height + MediaQuery.of(context).padding.top - 60),
             ),
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 10.0),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
+                  // Animated welcome text
                   FadeTransition(
-                    opacity: _opacityAnimation,
+                    opacity: _welcomeOpacityAnimation,
                     child: SlideTransition(
-                      position: _slideAnimation,
+                      position: _welcomeSlideAnimation,
                       child: Padding(
                         padding: const EdgeInsets.only(bottom: 20.0),
                         child: Text(
@@ -153,126 +239,174 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     ),
                   ),
 
-                  Text(
-                    'Explore Categories',
-                    style: textTheme.headlineMedium?.copyWith(
-                      fontSize: 25,
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
+                  // Explore Categories Section (Animated)
+                  FadeTransition(
+                    opacity: _categoriesOpacity,
+                    child: SlideTransition(
+                      position: _categoriesSlide,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Explore Categories',
+                            style: textTheme.headlineMedium?.copyWith(
+                              fontSize: 25,
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'Dive into quizzes across various exciting topics.',
+                            style: textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
+                          ),
+                          const SizedBox(height: 20),
+                          SizedBox(
+                            height: 140,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _categories.length,
+                              itemBuilder: (context, index) {
+                                final category = _categories[index];
+                                return _buildCategoryCard(
+                                  context,
+                                  category['name']!,
+                                  category['icon']!,
+                                  _categoryColors[index % _categoryColors.length],
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 30),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Dive into quizzes across various exciting topics.',
-                    style: textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    height: 140,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _categories.length,
-                      itemBuilder: (context, index) {
-                        final category = _categories[index];
-                        return _buildCategoryCard(
-                          context,
-                          category['name']!,
-                          category['icon']!,
-                          _categoryColors[index % _categoryColors.length],
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 30),
 
-                  Text(
-                    'Quick Quizzes',
-                    style: textTheme.headlineMedium?.copyWith(
-                      fontSize: 25,
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
+                  // Quick Quizzes Section (Animated)
+                  FadeTransition(
+                    opacity: _quickQuizzesOpacity,
+                    child: SlideTransition(
+                      position: _quickQuizzesSlide,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Quick Quizzes',
+                            style: textTheme.headlineMedium?.copyWith(
+                              fontSize: 25,
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'Challenge yourself with timed quizzes based on question count!',
+                            style: textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
+                          ),
+                          const SizedBox(height: 20),
+                          _buildQuickQuizButton(
+                            context,
+                            'Fast Quiz',
+                            '10 Questions | 10s per Q',
+                            10,
+                            10,
+                            Icons.flash_on_rounded,
+                            colorScheme.primary,
+                          ),
+                          const SizedBox(height: 15),
+                          _buildQuickQuizButton(
+                            context,
+                            'Medium Quiz',
+                            '15 Questions | 15s per Q',
+                            15,
+                            15,
+                            Icons.timer_rounded,
+                            colorScheme.secondary,
+                          ),
+                          const SizedBox(height: 15),
+                          _buildQuickQuizButton(
+                            context,
+                            'Long Quiz',
+                            '20 Questions | 20s per Q',
+                            20,
+                            20,
+                            Icons.hourglass_empty_rounded,
+                            colorScheme.tertiary,
+                          ),
+                          const SizedBox(height: 30),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Challenge yourself with timed quizzes based on question count!',
-                    style: textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
-                  ),
-                  const SizedBox(height: 20),
-                  _buildQuickQuizButton(
-                    context,
-                    'Fast Quiz',
-                    '10 Questions | 10s per Q',
-                    10,
-                    10,
-                    Icons.flash_on_rounded,
-                    colorScheme.primary,
-                  ),
-                  const SizedBox(height: 15),
-                  _buildQuickQuizButton(
-                    context,
-                    'Medium Quiz',
-                    '15 Questions | 15s per Q',
-                    15,
-                    15,
-                    Icons.timer_rounded,
-                    colorScheme.secondary,
-                  ),
-                  const SizedBox(height: 15),
-                  _buildQuickQuizButton(
-                    context,
-                    'Long Quiz',
-                    '20 Questions | 20s per Q',
-                    20,
-                    20,
-                    Icons.hourglass_empty_rounded,
-                    colorScheme.tertiary,
-                  ),
-                  const SizedBox(height: 30),
 
-                  Text(
-                    'Daily Challenge',
-                    style: textTheme.headlineMedium?.copyWith(
-                      fontSize: 25,
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
+                  // Daily Challenge Section (Animated)
+                  FadeTransition(
+                    opacity: _dailyChallengeOpacity,
+                    child: SlideTransition(
+                      position: _dailyChallengeSlide,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Daily Challenge',
+                            style: textTheme.headlineMedium?.copyWith(
+                              fontSize: 25,
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'Test your skills with today\'s special quiz!',
+                            style: textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
+                          ),
+                          const SizedBox(height: 20),
+                          _buildFeaturedQuizCard(context),
+                          const SizedBox(height: 30),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Test your skills with today\'s special quiz!',
-                    style: textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
-                  ),
-                  const SizedBox(height: 20),
-                  _buildFeaturedQuizCard(context),
-                  const SizedBox(height: 30),
 
-                  Text(
-                    'More Options',
-                    style: textTheme.headlineMedium?.copyWith(
-                      fontSize: 25,
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
+                  // More Options Section (Animated)
+                  FadeTransition(
+                    opacity: _moreOptionsOpacity,
+                    child: SlideTransition(
+                      position: _moreOptionsSlide,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'More Options',
+                            style: textTheme.headlineMedium?.copyWith(
+                              fontSize: 25,
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'Discover additional features and challenges.',
+                            style: textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
+                          ),
+                          const SizedBox(height: 20),
+                          _buildOptionCard(context, 'Browse All Quizzes', Icons.list_alt_rounded, () {
+                            ScaffoldMessenger.of(
+                              context,
+                            ).showSnackBar(const SnackBar(content: Text('Browse All Quizzes! (Coming soon)')));
+                          }),
+                          const SizedBox(height: 15),
+                          _buildOptionCard(context, 'Leaderboard', Icons.leaderboard_rounded, () {
+                            ScaffoldMessenger.of(
+                              context,
+                            ).showSnackBar(const SnackBar(content: Text('Leaderboard! (Coming soon)')));
+                          }),
+                          const SizedBox(height: 30),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Discover additional features and challenges.',
-                    style: textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
-                  ),
-                  const SizedBox(height: 20),
-                  _buildOptionCard(context, 'Browse All Quizzes', Icons.list_alt_rounded, () {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(const SnackBar(content: Text('Browse All Quizzes! (Coming soon)')));
-                  }),
-                  const SizedBox(height: 15),
-                  _buildOptionCard(context, 'Leaderboard', Icons.leaderboard_rounded, () {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(const SnackBar(content: Text('Leaderboard! (Coming soon)')));
-                  }),
-                  const SizedBox(height: 30),
                 ]),
               ),
             ),
@@ -367,7 +501,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             builder: (context) => QuizScreen(
               numberOfQuestions: 10, // You can make this configurable or default
               questionTimerSeconds: 15, // You can make this configurable or default
-              category: categoryName, // <--- THIS IS THE KEY: Pass the category name
+              // TODO: category parameter needs to be added to QuizScreen's constructor and logic
+              // category: categoryName,
             ),
           ),
         );
