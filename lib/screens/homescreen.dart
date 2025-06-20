@@ -501,8 +501,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             builder: (context) => QuizScreen(
               numberOfQuestions: 10, // You can make this configurable or default
               questionTimerSeconds: 15, // You can make this configurable or default
-              // TODO: category parameter needs to be added to QuizScreen's constructor and logic
-              // category: categoryName,
+              category: categoryName,
             ),
           ),
         );
