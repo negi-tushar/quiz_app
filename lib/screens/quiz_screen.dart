@@ -214,7 +214,7 @@ class _QuizScreenState extends State<QuizScreen> {
           ),
           child: Column(
             children: [
-              if (Platform.isIOS) const SizedBox(height: 80) else const SizedBox(height: 20),
+              const SizedBox(height: 80),
               // Linear Progress Indicator for Timer (moved to top)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
