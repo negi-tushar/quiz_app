@@ -439,10 +439,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: startColor.withOpacity(0.25), spreadRadius: 1, blurRadius: 10, offset: const Offset(0, 5)),
+          BoxShadow(
+            color: startColor.withValues(alpha: 0.25),
+            spreadRadius: 1,
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
         ],
         gradient: LinearGradient(
-          colors: [startColor, startColor.withOpacity(0.8)],
+          colors: [startColor, startColor.withValues(alpha: 0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -460,7 +465,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             );
           },
           borderRadius: BorderRadius.circular(20),
-          splashColor: Colors.white.withOpacity(0.2),
+          splashColor: Colors.white.withValues(alpha: 0.2),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 25),
             child: Row(
@@ -483,12 +488,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       const SizedBox(height: 4),
                       Text(
                         subtitle,
-                        style: textTheme.bodyMedium?.copyWith(fontSize: 14, color: Colors.white.withOpacity(0.9)),
+                        style: textTheme.bodyMedium?.copyWith(fontSize: 14, color: Colors.white.withValues(alpha: 0.9)),
                       ),
                     ],
                   ),
                 ),
-                Icon(Icons.arrow_forward_ios_rounded, size: 25, color: Colors.white.withOpacity(0.8)),
+                Icon(Icons.arrow_forward_ios_rounded, size: 25, color: Colors.white.withValues(alpha: 0.8)),
               ],
             ),
           ),
@@ -519,13 +524,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [cardColor, cardColor.withOpacity(0.7)],
+            colors: [cardColor, cardColor.withValues(alpha: 0.7)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
-            BoxShadow(color: cardColor.withOpacity(0.3), spreadRadius: 1, blurRadius: 8, offset: const Offset(0, 4)),
+            BoxShadow(
+              color: cardColor.withValues(alpha: 0.3),
+              spreadRadius: 1,
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
           ],
         ),
         child: Column(
@@ -558,7 +568,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.08),
+            color: colorScheme.shadow.withValues(alpha: 0.08),
             spreadRadius: 1,
             blurRadius: 6,
             offset: const Offset(0, 3),
@@ -572,7 +582,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         child: InkWell(
           onTap: onPressed,
           borderRadius: BorderRadius.circular(15),
-          splashColor: colorScheme.primary.withOpacity(0.1),
+          splashColor: colorScheme.primary.withValues(alpha: 0.1),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
             child: Row(
@@ -610,7 +620,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.primary.withOpacity(0.3),
+            color: colorScheme.primary.withValues(alpha: 0.3),
             spreadRadius: 2,
             blurRadius: 15,
             offset: const Offset(0, 8),
@@ -627,7 +637,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         borderRadius: BorderRadius.circular(20),
         child: InkWell(
           onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Starting Daily Challenge!')));
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) => const QuizScreen(numberOfQuestions: 10, questionTimerSeconds: 12),
@@ -635,7 +644,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             );
           },
           borderRadius: BorderRadius.circular(20),
-          splashColor: Colors.white.withOpacity(0.2),
+          splashColor: Colors.white.withValues(alpha: 0.2),
           child: Padding(
             padding: const EdgeInsets.all(25.0),
             child: Column(
@@ -658,7 +667,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 const SizedBox(height: 15),
                 Text(
                   'Complete today\'s unique quiz and climb the ranks!',
-                  style: textTheme.bodyLarge?.copyWith(color: Colors.white.withOpacity(0.9), fontSize: 14),
+                  style: textTheme.bodyLarge?.copyWith(color: Colors.white.withValues(alpha: 0.9), fontSize: 14),
                 ),
               ],
             ),

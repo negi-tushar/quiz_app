@@ -31,8 +31,7 @@ class ResultScreen extends StatefulWidget {
 
 class _ResultScreenState extends State<ResultScreen> {
   final LeaderboardService _leaderboardService = LeaderboardService();
-  bool _isSubmittingScore = false;
-  bool _scoreSubmitted = false;
+
   String? _submissionError;
 
   // Assuming _basePointsPerCorrectAnswer was 100 in QuizScreen
@@ -52,10 +51,6 @@ class _ResultScreenState extends State<ResultScreen> {
       if (widget.score > 0) {
         // Only submit score if it's greater than 0
         await _submitScore();
-      } else {
-        setState(() {
-          _scoreSubmitted = false; // Reset score submission state
-        });
       }
     });
   }
@@ -88,14 +83,12 @@ class _ResultScreenState extends State<ResultScreen> {
 
   Future<void> _submitScore() async {
     setState(() {
-      _isSubmittingScore = true;
       _submissionError = null;
     });
 
     final currentUser = AuthService().getCurrentUser();
     if (currentUser == null) {
       setState(() {
-        _isSubmittingScore = false;
         _submissionError = 'You must be logged in to submit scores.';
       });
       return;
@@ -111,24 +104,13 @@ class _ResultScreenState extends State<ResultScreen> {
         imageUrl: currentUser.photoURL ?? '',
         newOptimizedScore: widget.score, // Submit the optimized score
       );
-      setState(() {
-        _scoreSubmitted = true;
-        _isSubmittingScore = false;
-      });
-      if (mounted) {
-        // Check if the widget is still in the tree before showing SnackBar
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Score submitted successfully!')));
-      }
     } catch (e) {
       debugPrint('Error submitting score: $e');
       setState(() {
-        _submissionError = 'Failed to submit score: ${e.toString()}';
-        _isSubmittingScore = false;
+        _submissionError = 'Failed to submit score. Please try again later.';
       });
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to submit score: $_submissionError')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to submit score')));
       }
     }
   }
@@ -165,7 +147,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 'Quiz Results',
                 style: textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: colorScheme.onBackground,
+                  color: colorScheme.onSurface,
                   fontSize: 30,
                 ),
                 textAlign: TextAlign.center,
@@ -180,11 +162,11 @@ class _ResultScreenState extends State<ResultScreen> {
                       margin: const EdgeInsets.symmetric(horizontal: 16),
                       padding: const EdgeInsets.all(30.0),
                       decoration: BoxDecoration(
-                        color: colorScheme.surface.withOpacity(0.9), // Use themed surface color
+                        color: colorScheme.surface.withValues(alpha: 0.9), // Use themed surface color
                         borderRadius: BorderRadius.circular(25), // More rounded corners
                         boxShadow: [
                           BoxShadow(
-                            color: colorScheme.shadow.withOpacity(0.15),
+                            color: colorScheme.shadow.withValues(alpha: 0.15),
                             spreadRadius: 2,
                             blurRadius: 15,
                             offset: const Offset(0, 8),
@@ -222,7 +204,7 @@ class _ResultScreenState extends State<ResultScreen> {
                               fontSize: 56, // Larger font size
                               shadows: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.15),
+                                  color: Colors.black.withValues(alpha: 0.15),
                                   blurRadius: 5,
                                   offset: const Offset(2, 2),
                                 ),
@@ -255,7 +237,9 @@ class _ResultScreenState extends State<ResultScreen> {
                               ],
                             ),
                             progressColor: _getScoreColor(context), // Color based on accuracy
-                            backgroundColor: colorScheme.surfaceVariant.withOpacity(0.5), // Background of progress bar
+                            backgroundColor: colorScheme.surfaceContainerHighest.withValues(
+                              alpha: 0.5,
+                            ), // Background of progress bar
                             circularStrokeCap: CircularStrokeCap.round,
                           ),
                           const SizedBox(height: 30),
@@ -263,11 +247,11 @@ class _ResultScreenState extends State<ResultScreen> {
                           // Quiz Type and Category Display
                           // Text(
                           //   'Quiz Type: ${widget.quizType}',
-                          //   style: textTheme.titleMedium?.copyWith(color: colorScheme.onSurface.withOpacity(0.8)),
+                          //   style: textTheme.titleMedium?.copyWith(color: colorScheme.onSurface.withValues(alpha:0.8)),
                           // ),
                           // Text(
                           //   'Category: ${widget.category ?? 'Not Specified'}',
-                          //   style: textTheme.titleMedium?.copyWith(color: colorScheme.onSurface.withOpacity(0.8)),
+                          //   style: textTheme.titleMedium?.copyWith(color: colorScheme.onSurface.withValues(alpha:0.8)),
                           // ),
                           // const SizedBox(height: 30),
 

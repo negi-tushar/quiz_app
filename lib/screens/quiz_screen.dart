@@ -174,16 +174,16 @@ class _QuizScreenState extends State<QuizScreen> {
 
   Color _getOptionContainerColor(String option, ColorScheme colorScheme) {
     if (!_isAnswerLocked) {
-      return colorScheme.surface.withOpacity(0.15);
+      return colorScheme.surface.withValues(alpha: 0.15);
     }
     final currentQuestion = _questions[_currentQuestionIndex];
     if (option == currentQuestion.correctAnswer) {
-      return Colors.green.shade300.withOpacity(0.8);
+      return Colors.green.shade300.withValues(alpha: 0.8);
     }
     if (option == _selectedAnswer) {
-      return Colors.red.shade300.withOpacity(0.8);
+      return Colors.red.shade300.withValues(alpha: 0.8);
     }
-    return colorScheme.surface.withOpacity(0.05);
+    return colorScheme.surface.withValues(alpha: 0.05);
   }
 
   Future<bool> _onWillPop() async {
@@ -225,7 +225,7 @@ class _QuizScreenState extends State<QuizScreen> {
             children: [
               CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(colorScheme.primary)),
               const SizedBox(height: 20),
-              Text('Loading Quiz...', style: textTheme.titleMedium?.copyWith(color: colorScheme.onBackground)),
+              Text('Loading Quiz...', style: textTheme.titleMedium?.copyWith(color: colorScheme.onSurface)),
             ],
           ),
         ),
@@ -256,7 +256,7 @@ class _QuizScreenState extends State<QuizScreen> {
                       child: LinearProgressIndicator(
                         value: _currentTimerSeconds / widget.questionTimerSeconds,
                         minHeight: 8,
-                        backgroundColor: colorScheme.surface.withOpacity(0.3),
+                        backgroundColor: colorScheme.surface.withValues(alpha: 0.3),
                         color: colorScheme.secondary,
                       ),
                     ),
@@ -293,7 +293,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 top: 40 + MediaQuery.of(context).padding.top,
                 right: 10,
                 child: IconButton(
-                  icon: Icon(Icons.close_rounded, size: 30, color: colorScheme.onBackground.withOpacity(0.7)),
+                  icon: Icon(Icons.close_rounded, size: 30, color: colorScheme.onSurface.withValues(alpha: 0.7)),
                   onPressed: () async {
                     _onWillPop();
                   },
@@ -313,12 +313,12 @@ class _QuizScreenState extends State<QuizScreen> {
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: colorScheme.surface.withOpacity(0.25),
+          color: colorScheme.surface.withValues(alpha: 0.25),
           borderRadius: BorderRadius.circular(25),
-          border: Border.all(color: colorScheme.surface.withOpacity(0.3)),
+          border: Border.all(color: colorScheme.surface.withValues(alpha: 0.3)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               spreadRadius: 1,
               blurRadius: 10,
               offset: const Offset(0, 4),
@@ -337,7 +337,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: colorScheme.secondary.withOpacity(0.3),
+                    color: colorScheme.secondary.withValues(alpha: 0.3),
                     spreadRadius: 1,
                     blurRadius: 5,
                     offset: const Offset(0, 3),
@@ -366,7 +366,7 @@ class _QuizScreenState extends State<QuizScreen> {
         Text(
           label,
           style: textTheme.bodySmall?.copyWith(
-            color: colorScheme.onSurface.withOpacity(0.7),
+            color: colorScheme.onSurface.withValues(alpha: 0.7),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -392,13 +392,18 @@ class _QuizScreenState extends State<QuizScreen> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [colorScheme.surface.withOpacity(0.15), colorScheme.surface.withOpacity(0.05)],
+          colors: [colorScheme.surface.withValues(alpha: 0.15), colorScheme.surface.withValues(alpha: 0.05)],
         ),
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.1), spreadRadius: 1, blurRadius: 10, offset: const Offset(0, 10)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            spreadRadius: 1,
+            blurRadius: 10,
+            offset: const Offset(0, 10),
+          ),
         ],
-        border: Border.all(color: colorScheme.surface.withOpacity(0.4), width: 1.5),
+        border: Border.all(color: colorScheme.surface.withValues(alpha: 0.4), width: 1.5),
       ),
       child: SingleChildScrollView(
         child: Column(
@@ -412,7 +417,9 @@ class _QuizScreenState extends State<QuizScreen> {
                 fontWeight: FontWeight.w700,
                 color: colorScheme.onSurface,
                 fontSize: 18,
-                shadows: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 2, offset: const Offset(1, 1))],
+                shadows: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(1, 1)),
+                ],
               ),
             ),
             const SizedBox(height: 35),
@@ -423,11 +430,11 @@ class _QuizScreenState extends State<QuizScreen> {
                   color: _getOptionContainerColor(option, colorScheme),
                   borderRadius: BorderRadius.circular(18),
                   elevation: 4,
-                  shadowColor: Colors.black.withOpacity(0.2),
+                  shadowColor: Colors.black.withValues(alpha: 0.2),
                   child: InkWell(
                     onTap: _isAnswerLocked || _currentTimerSeconds == 0 ? null : () => _checkAnswer(option),
                     borderRadius: BorderRadius.circular(18),
-                    splashColor: colorScheme.primary.withOpacity(0.3),
+                    splashColor: colorScheme.primary.withValues(alpha: 0.3),
                     highlightColor: Colors.transparent,
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
@@ -438,7 +445,7 @@ class _QuizScreenState extends State<QuizScreen> {
                               ? (_selectedAnswer == _questions[_currentQuestionIndex].correctAnswer
                                     ? Colors.green.shade700
                                     : Colors.red.shade700)
-                              : colorScheme.surface.withOpacity(0.4),
+                              : colorScheme.surface.withValues(alpha: 0.4),
                           width: _selectedAnswer == option && _isAnswerLocked ? 3 : 1.0,
                         ),
                       ),
@@ -464,7 +471,7 @@ class _QuizScreenState extends State<QuizScreen> {
             //         : (question.explanation?.isNotEmpty == true ? 'Explanation: ${question.explanation}' : ''),
             //     style: textTheme.bodyLarge?.copyWith(
             //       fontStyle: FontStyle.italic,
-            //       color: colorScheme.onSurface.withOpacity(0.8),
+            //       color: colorScheme.onSurface.withValues(alpha:0.8),
             //       fontSize: 16,
             //     ),
             //     textAlign: TextAlign.center,

@@ -105,7 +105,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
                             padding: const EdgeInsets.symmetric(horizontal: 24),
                             child: Text(
                               'Failed to load leaderboard',
-                              style: textTheme.bodyLarge?.copyWith(color: colorScheme.onBackground),
+                              style: textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
                               textAlign: TextAlign.center,
                             ),
                           ),
@@ -119,11 +119,15 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.leaderboard_outlined, color: colorScheme.onBackground.withOpacity(0.5), size: 48),
+                          Icon(
+                            Icons.leaderboard_outlined,
+                            color: colorScheme.onSurface.withValues(alpha: 0.5),
+                            size: 48,
+                          ),
                           const SizedBox(height: 16),
                           Text(
                             'No scores yet',
-                            style: textTheme.bodyLarge?.copyWith(color: colorScheme.onBackground.withOpacity(0.7)),
+                            style: textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface.withValues(alpha: 0.7)),
                           ),
                         ],
                       ),
@@ -249,12 +253,14 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
                                 return Container(
                                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: isCurrentUser ? colorScheme.primary.withOpacity(0.1) : Colors.transparent,
+                                    color: isCurrentUser
+                                        ? colorScheme.primary.withValues(alpha: 0.1)
+                                        : Colors.transparent,
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
                                       color: isCurrentUser
-                                          ? colorScheme.primary.withOpacity(0.3)
-                                          : colorScheme.surfaceVariant,
+                                          ? colorScheme.primary.withValues(alpha: 0.3)
+                                          : colorScheme.surfaceContainerHighest,
                                       width: 1.5,
                                     ),
                                   ),
@@ -290,7 +296,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                       decoration: BoxDecoration(
                                         color: isCurrentUser
-                                            ? colorScheme.primary.withOpacity(0.2)
+                                            ? colorScheme.primary.withValues(alpha: 0.2)
                                             : colorScheme.surfaceContainerHighest,
                                         borderRadius: BorderRadius.circular(20),
                                       ),

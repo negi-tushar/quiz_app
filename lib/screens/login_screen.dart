@@ -35,9 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _saveUserName(String? displayName, String? image, String id) async {
     await SharedPrefService.saveData(userNameKey, getFirstName(displayName ?? 'Guest'));
     await SharedPrefService.saveData(userImage, image ?? '');
-    print("ID:==================> $id");
     await SharedPrefService.saveData(userID, id);
-    print("ID:==================>2 ${SharedPrefService.getData(userID)}");
   }
 
   Future<void> _handleSignIn() async {
@@ -99,7 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 10),
               Text(
                 'Your daily dose of knowledge!',
-                style: textTheme.titleMedium?.copyWith(color: colorScheme.onBackground.withOpacity(0.7)),
+                style: textTheme.titleMedium?.copyWith(color: colorScheme.onBackground.withValues(alpha: 0.7)),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 30),

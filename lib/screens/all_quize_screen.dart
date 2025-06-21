@@ -6,35 +6,6 @@ import 'package:quiz_app/screens/quiz_screen.dart';
 class AllQuizzesScreen extends StatelessWidget {
   const AllQuizzesScreen({super.key});
 
-  IconData _getIconData(String iconName) {
-    switch (iconName) {
-      case 'lightbulb_outline':
-        return Icons.lightbulb_outline_rounded;
-      case 'science':
-        return Icons.science_rounded;
-      case 'history':
-        return Icons.history_rounded;
-      case 'sports_soccer':
-        return Icons.sports_soccer_rounded;
-      case 'palette':
-        return Icons.palette_rounded;
-      case 'map':
-        return Icons.map_rounded;
-      case 'movie':
-        return Icons.movie_rounded;
-      case 'music_note':
-        return Icons.music_note_rounded;
-      case 'account_balance':
-        return Icons.account_balance_rounded;
-      case 'diversity_3':
-        return Icons.diversity_3_rounded;
-      case 'landscape':
-        return Icons.landscape_rounded;
-      default:
-        return Icons.category_rounded;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -52,7 +23,7 @@ class AllQuizzesScreen extends StatelessWidget {
                 style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: colorScheme.onSurface),
               ),
               centerTitle: true,
-              backgroundColor: theme.appBarTheme.backgroundColor?.withOpacity(0.9),
+              backgroundColor: theme.appBarTheme.backgroundColor?.withValues(alpha: 0.9),
               elevation: 4,
               floating: true,
               snap: true,
@@ -68,7 +39,7 @@ class AllQuizzesScreen extends StatelessWidget {
                       end: Alignment.bottomRight,
 
                       colors: theme.brightness == Brightness.light
-                          ? [colorScheme.primary.withOpacity(0.8), colorScheme.primary]
+                          ? [colorScheme.primary.withValues(alpha: 0.8), colorScheme.primary]
                           : [colorScheme.surfaceContainerHigh, colorScheme.surfaceContainerHighest],
                     ),
                   ),
@@ -105,18 +76,18 @@ class AllQuizzesScreen extends StatelessWidget {
   ) {
     return Container(
       decoration: BoxDecoration(
-        color: quiz.color?.withOpacity(0.1) ?? colorScheme.surface.withOpacity(0.1),
+        color: quiz.color?.withValues(alpha: 0.1) ?? colorScheme.surface.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.1),
+            color: colorScheme.shadow.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
         ],
         border: Border.all(
-          color: quiz.color?.withOpacity(0.3) ?? colorScheme.surfaceVariant.withOpacity(0.3),
+          color: quiz.color?.withValues(alpha: 0.3) ?? colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           width: 1.5,
         ),
       ),
@@ -136,7 +107,7 @@ class AllQuizzesScreen extends StatelessWidget {
             );
           },
           borderRadius: BorderRadius.circular(20),
-          splashColor: colorScheme.primary.withOpacity(0.15),
+          splashColor: colorScheme.primary.withValues(alpha: 0.15),
           child: Padding(
             padding: const EdgeInsets.all(12.0),
             child: Column(
@@ -172,14 +143,14 @@ class AllQuizzesScreen extends StatelessWidget {
                     Text(
                       '${quiz.numberOfQuestions} Qs',
                       style: textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurface.withOpacity(0.7),
+                        color: colorScheme.onSurface.withValues(alpha: 0.7),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     Text(
                       '${quiz.questionTimerSeconds}s/Q',
                       style: textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurface.withOpacity(0.7),
+                        color: colorScheme.onSurface.withValues(alpha: 0.7),
                         fontWeight: FontWeight.w500,
                       ),
                     ),

@@ -1,5 +1,5 @@
 String getFirstName(String fullName) {
-  if (fullName == null || fullName.trim().isEmpty) {
+  if (fullName.trim().isEmpty) {
     return 'Guest';
   } else {
     List<String> parts = fullName.trim().split(RegExp(r'\s+'));
