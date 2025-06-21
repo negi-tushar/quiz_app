@@ -1,12 +1,16 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:quiz_app/common/string.dart';
+import 'package:quiz_app/firebase_options.dart';
 import 'package:quiz_app/screens/homescreen.dart';
+import 'package:quiz_app/screens/login_screen.dart';
 import 'package:quiz_app/screens/username_scren.dart';
 import 'package:quiz_app/service/quiz_service.dart';
 import 'package:quiz_app/service/shared_pref_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await SharedPrefService.init();
   await QuizService.initializeQuestions();
   runApp(const MyApp());
@@ -25,7 +29,7 @@ class MyApp extends StatelessWidget {
       themeMode: ThemeMode.system,
       darkTheme: ThemeData.dark(),
       initialRoute: ((SharedPrefService.getData(userNameKey) ?? "") as String).isNotEmpty ? '/home' : '/user',
-      routes: {'/user': (context) => UserProfileScreen(), '/home': (context) => HomeScreen()},
+      routes: {'/user': (context) => LoginScreen(), '/home': (context) => HomeScreen()},
     );
   }
 }
