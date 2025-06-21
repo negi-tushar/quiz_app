@@ -205,15 +205,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: theme.brightness == Brightness.light
-                ? [colorScheme.surfaceContainerHighest, colorScheme.surface]
-                : [colorScheme.surfaceContainerHigh, colorScheme.surface],
-          ),
-        ),
+        color: theme.brightness == Brightness.light ? Colors.white : Colors.black38,
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
@@ -234,7 +226,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           child: Text(
                             'Hello, $_userName',
                             style: textTheme.headlineLarge?.copyWith(
-                              fontSize: 30,
+                              fontSize: 25,
                               fontWeight: FontWeight.bold,
                               color: colorScheme.primary,
                             ),
@@ -255,6 +247,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                     ],
                   ),
+                  const SizedBox(height: 30),
 
                   // Explore Categories Section (Animated)
                   FadeTransition(
@@ -267,7 +260,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           Text(
                             'Explore Categories',
                             style: textTheme.headlineMedium?.copyWith(
-                              fontSize: 25,
+                              fontSize: 22,
                               fontWeight: FontWeight.bold,
                               color: colorScheme.onSurface,
                             ),
@@ -312,7 +305,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           Text(
                             'Quick Quizzes',
                             style: textTheme.headlineMedium?.copyWith(
-                              fontSize: 25,
+                              fontSize: 22,
                               fontWeight: FontWeight.bold,
                               color: colorScheme.onSurface,
                             ),
@@ -369,7 +362,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           Text(
                             'Daily Challenge',
                             style: textTheme.headlineMedium?.copyWith(
-                              fontSize: 25,
+                              fontSize: 22,
                               fontWeight: FontWeight.bold,
                               color: colorScheme.onSurface,
                             ),
@@ -398,7 +391,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           Text(
                             'More Options',
                             style: textTheme.headlineMedium?.copyWith(
-                              fontSize: 25,
+                              fontSize: 22,
                               fontWeight: FontWeight.bold,
                               color: colorScheme.onSurface,
                             ),
@@ -473,7 +466,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(icon, size: 38, color: Colors.white),
+                Icon(icon, size: 30, color: Colors.white),
                 const SizedBox(width: 20),
                 Expanded(
                   child: Column(
@@ -482,7 +475,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       Text(
                         title,
                         style: textTheme.titleLarge?.copyWith(
-                          fontSize: 22,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
@@ -490,7 +483,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       const SizedBox(height: 4),
                       Text(
                         subtitle,
-                        style: textTheme.bodyMedium?.copyWith(fontSize: 15, color: Colors.white.withOpacity(0.9)),
+                        style: textTheme.bodyMedium?.copyWith(fontSize: 14, color: Colors.white.withOpacity(0.9)),
                       ),
                     ],
                   ),
@@ -592,7 +585,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     title,
                     textAlign: TextAlign.left,
                     style: textTheme.titleMedium?.copyWith(
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: colorScheme.onSurface,
                     ),
@@ -657,7 +650,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       style: textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
-                        fontSize: 24,
+                        fontSize: 21,
                       ),
                     ),
                   ],
@@ -665,7 +658,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 const SizedBox(height: 15),
                 Text(
                   'Complete today\'s unique quiz and climb the ranks!',
-                  style: textTheme.bodyLarge?.copyWith(color: Colors.white.withOpacity(0.9), fontSize: 16),
+                  style: textTheme.bodyLarge?.copyWith(color: Colors.white.withOpacity(0.9), fontSize: 14),
                 ),
               ],
             ),

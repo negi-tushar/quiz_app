@@ -242,23 +242,13 @@ class _QuizScreenState extends State<QuizScreen> {
       },
       child: Scaffold(
         body: Container(
-          color: theme.brightness == Brightness.light
-              ? Colors.white
-              : Colors.black38, // Use transparent to avoid default background color
-          // decoration: BoxDecoration(
-          //   gradient: LinearGradient(
-          //     begin: Alignment.topLeft,
-          //     end: Alignment.bottomRight,
-          //     colors: theme.brightness == Brightness.light
-          //         ? [colorScheme.surfaceContainerHighest, colorScheme.surface]
-          //         : [colorScheme.surfaceContainerHigh, colorScheme.surface],
-          //   ),
-          // ),
+          color: theme.brightness == Brightness.light ? Colors.white : Colors.black38,
+
           child: Stack(
             children: [
               Column(
                 children: [
-                  const SizedBox(height: 80),
+                  const SizedBox(height: 70),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: ClipRRect(
@@ -271,26 +261,10 @@ class _QuizScreenState extends State<QuizScreen> {
                       ),
                     ),
                   ),
-                  // const SizedBox(height: 10),
-                  // Padding(
-                  //   padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  //   child: Align(
-                  //     alignment: Alignment.centerLeft,
-                  //     child: Text(
-                  //       widget.category != null && widget.category!.isNotEmpty
-                  //           ? '${widget.category} Quiz'
-                  //           : widget.quizType, // Use quizType if category is null
-                  //       style: textTheme.headlineMedium?.copyWith(
-                  //         fontWeight: FontWeight.bold,
-                  //         color: colorScheme.onBackground,
-                  //         fontSize: 30,
-                  //       ),
-                  //     ),
-                  //   ),
-                  // ),
-                  const SizedBox(height: 20),
+
+                  const SizedBox(height: 10),
                   _buildHeaderStats(theme, colorScheme, textTheme),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
                   Expanded(
                     child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 600),
@@ -372,7 +346,11 @@ class _QuizScreenState extends State<QuizScreen> {
               ),
               child: Text(
                 '${_currentTimerSeconds}s',
-                style: textTheme.titleMedium?.copyWith(color: colorScheme.onSecondary, fontWeight: FontWeight.bold),
+                style: textTheme.titleMedium?.copyWith(
+                  color: colorScheme.onSecondary,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -398,7 +376,7 @@ class _QuizScreenState extends State<QuizScreen> {
           style: textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
             color: colorScheme.onSurface,
-            fontSize: 24,
+            fontSize: 20,
           ),
         ),
       ],
@@ -408,8 +386,8 @@ class _QuizScreenState extends State<QuizScreen> {
   // Helper widget for the main question and options container
   Widget _buildQuestionContainer(Question question, TextTheme textTheme, ColorScheme colorScheme) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      padding: const EdgeInsets.all(28),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+      padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -418,7 +396,7 @@ class _QuizScreenState extends State<QuizScreen> {
         ),
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.1), spreadRadius: 1, blurRadius: 20, offset: const Offset(0, 10)),
+          BoxShadow(color: Colors.black.withOpacity(0.1), spreadRadius: 1, blurRadius: 10, offset: const Offset(0, 10)),
         ],
         border: Border.all(color: colorScheme.surface.withOpacity(0.4), width: 1.5),
       ),
@@ -433,53 +411,51 @@ class _QuizScreenState extends State<QuizScreen> {
               style: textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: colorScheme.onSurface,
-                fontSize: 24,
+                fontSize: 18,
                 shadows: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 2, offset: const Offset(1, 1))],
               ),
             ),
             const SizedBox(height: 35),
-            ...question.options
-                .map(
-                  (option) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Material(
-                      color: _getOptionContainerColor(option, colorScheme),
-                      borderRadius: BorderRadius.circular(18),
-                      elevation: 4,
-                      shadowColor: Colors.black.withOpacity(0.2),
-                      child: InkWell(
-                        onTap: _isAnswerLocked || _currentTimerSeconds == 0 ? null : () => _checkAnswer(option),
+            ...question.options.map(
+              (option) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Material(
+                  color: _getOptionContainerColor(option, colorScheme),
+                  borderRadius: BorderRadius.circular(18),
+                  elevation: 4,
+                  shadowColor: Colors.black.withOpacity(0.2),
+                  child: InkWell(
+                    onTap: _isAnswerLocked || _currentTimerSeconds == 0 ? null : () => _checkAnswer(option),
+                    borderRadius: BorderRadius.circular(18),
+                    splashColor: colorScheme.primary.withOpacity(0.3),
+                    highlightColor: Colors.transparent,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+                      decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(18),
-                        splashColor: colorScheme.primary.withOpacity(0.3),
-                        highlightColor: Colors.transparent,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                              color: _selectedAnswer == option && _isAnswerLocked
-                                  ? (_selectedAnswer == _questions[_currentQuestionIndex].correctAnswer
-                                        ? Colors.green.shade700
-                                        : Colors.red.shade700)
-                                  : colorScheme.surface.withOpacity(0.4),
-                              width: _selectedAnswer == option && _isAnswerLocked ? 3 : 1.0,
-                            ),
-                          ),
-                          child: Text(
-                            option,
-                            textAlign: TextAlign.center,
-                            style: textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: colorScheme.onSurface,
-                              fontSize: 18,
-                            ),
-                          ),
+                        border: Border.all(
+                          color: _selectedAnswer == option && _isAnswerLocked
+                              ? (_selectedAnswer == _questions[_currentQuestionIndex].correctAnswer
+                                    ? Colors.green.shade700
+                                    : Colors.red.shade700)
+                              : colorScheme.surface.withOpacity(0.4),
+                          width: _selectedAnswer == option && _isAnswerLocked ? 3 : 1.0,
+                        ),
+                      ),
+                      child: Text(
+                        option,
+                        textAlign: TextAlign.center,
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.onSurface,
+                          fontSize: 15,
                         ),
                       ),
                     ),
                   ),
-                )
-                .toList(),
+                ),
+              ),
+            ),
             const SizedBox(height: 25),
             // if (_isAnswerLocked)
             //   Text(

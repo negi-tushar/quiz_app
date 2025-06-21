@@ -174,7 +174,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 child: Center(
                   child: SingleChildScrollView(
                     // Added SingleChildScrollView
-                    padding: const EdgeInsets.all(24.0),
+                    padding: const EdgeInsets.all(15.0),
                     child: Container(
                       // Replaced Card with Container for consistency
                       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -272,42 +272,6 @@ class _ResultScreenState extends State<ResultScreen> {
                           // const SizedBox(height: 30),
 
                           // Submit Score Button
-                          _isSubmittingScore
-                              ? CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-                                )
-                              : (_scoreSubmitted
-                                    ? Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.check_circle_rounded, color: Colors.green.shade500, size: 28),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            'Score Submitted!',
-                                            style: textTheme.titleMedium?.copyWith(color: Colors.green.shade500),
-                                          ),
-                                        ],
-                                      )
-                                    : SizedBox(
-                                        width: double.infinity, // Full width button
-                                        child: ElevatedButton.icon(
-                                          onPressed: _submitScore,
-                                          icon: Icon(Icons.leaderboard_rounded, color: colorScheme.onPrimary),
-                                          label: Padding(
-                                            padding: const EdgeInsets.symmetric(vertical: 12.0),
-                                            child: Text(
-                                              'Submit Score',
-                                              style: textTheme.labelLarge?.copyWith(fontSize: 18),
-                                            ),
-                                          ),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: colorScheme.primary,
-                                            foregroundColor: colorScheme.onPrimary,
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                                            elevation: 5,
-                                          ),
-                                        ),
-                                      )),
                           if (_submissionError != null)
                             Padding(
                               padding: const EdgeInsets.only(top: 10),
@@ -327,7 +291,7 @@ class _ResultScreenState extends State<ResultScreen> {
                               icon: const Icon(Icons.home_rounded),
                               label: Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 12.0),
-                                child: Text('Back to Home', style: textTheme.labelLarge?.copyWith(fontSize: 18)),
+                                child: Text('Back to Home', style: textTheme.labelLarge?.copyWith(fontSize: 16)),
                               ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: colorScheme.secondary, // Secondary color for neutral action
@@ -351,7 +315,7 @@ class _ResultScreenState extends State<ResultScreen> {
                               icon: const Icon(Icons.leaderboard_rounded),
                               label: Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 12.0),
-                                child: Text('View Leaderboard', style: textTheme.labelLarge?.copyWith(fontSize: 18)),
+                                child: Text('View Leaderboard', style: textTheme.labelLarge?.copyWith(fontSize: 16)),
                               ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: colorScheme.tertiary, // Tertiary color for another action

@@ -43,16 +43,7 @@ class AllQuizzesScreen extends StatelessWidget {
 
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-
-            colors: theme.brightness == Brightness.light
-                ? [colorScheme.surfaceContainerHighest, colorScheme.surface]
-                : [colorScheme.surfaceContainerHigh, colorScheme.surface],
-          ),
-        ),
+        color: theme.brightness == Brightness.light ? Colors.white : Colors.black38,
         child: CustomScrollView(
           slivers: [
             SliverAppBar(
@@ -89,9 +80,9 @@ class AllQuizzesScreen extends StatelessWidget {
               sliver: SliverGrid(
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: MediaQuery.sizeOf(context).width > 600 ? 3 : 2,
-                  crossAxisSpacing: 16.0,
-                  mainAxisSpacing: 16.0,
-                  childAspectRatio: 0.8,
+                  crossAxisSpacing: 10.0,
+                  mainAxisSpacing: 10.0,
+                  childAspectRatio: 0.7,
                 ),
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final quiz = allQuizzes[index];
@@ -158,10 +149,11 @@ class AllQuizzesScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 Text(
                   quiz.title,
+                  textAlign: TextAlign.center,
                   style: textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: colorScheme.onSurface,
-                    fontSize: 18,
+                    fontSize: 16,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -170,7 +162,7 @@ class AllQuizzesScreen extends StatelessWidget {
                 Text(
                   quiz.description,
                   style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant, fontSize: 12),
-                  maxLines: 2,
+                  maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const Spacer(),

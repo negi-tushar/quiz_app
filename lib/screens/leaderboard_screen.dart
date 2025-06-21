@@ -62,35 +62,30 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Leaderboard',
+          style: textTheme.headlineSmall?.copyWith(color: colorScheme.onSurface, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        backgroundColor: colorScheme.primary,
+        elevation: 4,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, color: colorScheme.onSurface),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh, color: colorScheme.onSurface),
+            onPressed: _refreshScores,
+          ),
+        ],
+      ),
       body: Container(
         color: theme.brightness == Brightness.light ? Colors.white : Colors.black38,
         child: Column(
           children: [
             // Header with back button and title
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.arrow_back_ios_new, color: colorScheme.onBackground),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                  const Spacer(),
-                  Text(
-                    'Leaderboard',
-                    style: textTheme.headlineSmall?.copyWith(
-                      color: colorScheme.onBackground,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: Icon(Icons.refresh, color: colorScheme.primary),
-                    onPressed: _refreshScores,
-                  ),
-                ],
-              ),
-            ),
 
             // Main content with proper constraints
             Expanded(
@@ -135,53 +130,58 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
                     );
                   } else {
                     // Sample data (replace with snapshot.data!)
-                    final data = [
-                      {
-                        "lastQuizCompletedAt": "",
-                        "totalOptimizedScore": 105,
-                        "userName": "Alex",
-                        "userImage": "https://randomuser.me/api/portraits/men/32.jpg",
-                        "userId": "2",
-                      },
-                      {
-                        "lastQuizCompletedAt": "",
-                        "totalOptimizedScore": 95,
-                        "userName": "Maria",
-                        "userImage": "https://randomuser.me/api/portraits/women/44.jpg",
-                        "userId": "3",
-                      },
-                      {
-                        "lastQuizCompletedAt": "",
-                        "totalOptimizedScore": 90,
-                        "userName": "John",
-                        "userImage": "https://randomuser.me/api/portraits/men/22.jpg",
-                        "userId": "4",
-                      },
-                      {
-                        "lastQuizCompletedAt": "",
-                        "totalOptimizedScore": 85,
-                        "userName": "Sarah",
-                        "userImage": "https://randomuser.me/api/portraits/women/33.jpg",
-                        "userId": "5",
-                      },
-                      {
-                        "lastQuizCompletedAt": "",
-                        "totalOptimizedScore": 80,
-                        "userName": "Michael",
-                        "userImage": "https://randomuser.me/api/portraits/men/45.jpg",
-                        "userId": "6",
-                      },
-                      {
-                        "lastQuizCompletedAt": "",
-                        "totalOptimizedScore": 1,
-                        "userName": "Tushar",
-                        "userImage":
-                            "https://lh3.googleusercontent.com/a/ACg8ocJf61OrxkEPw0lZ3piLJsbv1kx6xZYKHu_mos8v5xjyk_a6IA=s96-c",
-                        "userId": "TmE2PhNaOYf61ZdMA6recF7SPT23",
-                      },
-                    ];
-
-                    final topThree = data.take(3).toList();
+                    // final data = [
+                    //   {
+                    //     "lastQuizCompletedAt": "",
+                    //     "totalOptimizedScore": 105,
+                    //     "userName": "Alex",
+                    //     "userImage": "https://randomuser.me/api/portraits/men/32.jpg",
+                    //     "userId": "2",
+                    //   },
+                    //   {
+                    //     "lastQuizCompletedAt": "",
+                    //     "totalOptimizedScore": 95,
+                    //     "userName": "Maria",
+                    //     "userImage": "https://randomuser.me/api/portraits/women/44.jpg",
+                    //     "userId": "3",
+                    //   },
+                    //   {
+                    //     "lastQuizCompletedAt": "",
+                    //     "totalOptimizedScore": 90,
+                    //     "userName": "John",
+                    //     "userImage": "https://randomuser.me/api/portraits/men/22.jpg",
+                    //     "userId": "4",
+                    //   },
+                    //   {
+                    //     "lastQuizCompletedAt": "",
+                    //     "totalOptimizedScore": 85,
+                    //     "userName": "Sarah",
+                    //     "userImage": "https://randomuser.me/api/portraits/women/33.jpg",
+                    //     "userId": "5",
+                    //   },
+                    //   {
+                    //     "lastQuizCompletedAt": "",
+                    //     "totalOptimizedScore": 80,
+                    //     "userName": "Michael",
+                    //     "userImage": "https://randomuser.me/api/portraits/men/45.jpg",
+                    //     "userId": "6",
+                    //   },
+                    //   {
+                    //     "lastQuizCompletedAt": "",
+                    //     "totalOptimizedScore": 1,
+                    //     "userName": "Tushar",
+                    //     "userImage":
+                    //         "https://lh3.googleusercontent.com/a/ACg8ocJf61OrxkEPw0lZ3piLJsbv1kx6xZYKHu_mos8v5xjyk_a6IA=s96-c",
+                    //     "userId": "TmE2PhNaOYf61ZdMA6recF7SPT23",
+                    //   },
+                    // ];
+                    final data = snapshot.data!;
+                    var topThree = [];
+                    if (data.length > 3) {
+                      topThree = data.take(3).toList();
+                    } else {
+                      topThree = data.take(data.length).toList();
+                    }
                     final rest = data.skip(3).toList();
 
                     return FadeTransition(
@@ -193,26 +193,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
                             // Top 3 podium section
                             SliverToBoxAdapter(
                               child: SizedBox(
-                                height: size.height * 0.3, // Responsive height
+                                height: size.height * 0.35, // Responsive height
                                 child: Stack(
-                                  alignment: Alignment.bottomCenter,
+                                  alignment: Alignment.topCenter,
                                   children: [
                                     // Podium base
-                                    Container(
-                                      height: 40,
-                                      margin: const EdgeInsets.only(top: 20),
-                                      decoration: BoxDecoration(
-                                        color: colorScheme.surfaceContainerHighest,
-                                        borderRadius: BorderRadius.circular(12),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withOpacity(0.1),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 4),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
 
                                     // Podium steps
                                     Row(
@@ -220,31 +205,34 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
                                       crossAxisAlignment: CrossAxisAlignment.end,
                                       children: [
                                         // 2nd place
-                                        _buildPodiumStep(
-                                          context,
-                                          topThree[1],
-                                          rank: 2,
-                                          height: size.height * 0.08,
-                                          color: colorScheme.secondaryContainer,
-                                        ),
+                                        if (topThree.length >= 2)
+                                          _buildPodiumStep(
+                                            context,
+                                            topThree[1],
+                                            rank: 2,
+                                            height: size.height * 0.08,
+                                            color: colorScheme.secondaryContainer,
+                                          ),
 
                                         // 1st place
-                                        _buildPodiumStep(
-                                          context,
-                                          topThree[0],
-                                          rank: 1,
-                                          height: size.height * 0.10,
-                                          color: colorScheme.primaryContainer,
-                                        ),
+                                        if (topThree.isNotEmpty)
+                                          _buildPodiumStep(
+                                            context,
+                                            topThree[0],
+                                            rank: 1,
+                                            height: size.height * 0.10,
+                                            color: colorScheme.primaryContainer,
+                                          ),
 
                                         // 3rd place
-                                        _buildPodiumStep(
-                                          context,
-                                          topThree[2],
-                                          rank: 3,
-                                          height: size.height * 0.06,
-                                          color: colorScheme.tertiaryContainer,
-                                        ),
+                                        if (topThree.length >= 3)
+                                          _buildPodiumStep(
+                                            context,
+                                            topThree[2],
+                                            rank: 3,
+                                            height: size.height * 0.06,
+                                            color: colorScheme.tertiaryContainer,
+                                          ),
                                       ],
                                     ),
                                   ],
@@ -258,7 +246,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
                                 final rank = index + 4;
                                 final user = rest[index];
                                 final isCurrentUser = user['userId'] == (SharedPrefService.getData(userID) ?? "");
-                                print("userId: ${user['userId']}, currentUserId: ${SharedPrefService.getData(userID)}");
                                 return Container(
                                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                                   decoration: BoxDecoration(
@@ -286,7 +273,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
 
                                         CircleAvatar(
                                           radius: 20,
-                                          backgroundImage: NetworkImage(user['userImage'] as String),
+                                          backgroundImage: (user['userImage'] as String).isEmpty
+                                              ? const AssetImage('assets/img/user.png')
+                                              : NetworkImage(user['userImage'] as String),
                                         ),
                                       ],
                                     ),
@@ -302,7 +291,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
                                       decoration: BoxDecoration(
                                         color: isCurrentUser
                                             ? colorScheme.primary.withOpacity(0.2)
-                                            : colorScheme.surfaceVariant,
+                                            : colorScheme.surfaceContainerHighest,
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Text(
@@ -363,7 +352,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
                 CircleAvatar(
                   radius: 40,
                   backgroundColor: colorScheme.surface,
-                  child: CircleAvatar(radius: 40, backgroundImage: NetworkImage(user['userImage'] as String)),
+                  child: CircleAvatar(
+                    radius: 40,
+
+                    backgroundImage: (user['userImage'] as String).isEmpty
+                        ? const AssetImage('assets/img/user.png')
+                        : NetworkImage(user['userImage'] as String),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
