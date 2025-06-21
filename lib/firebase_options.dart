@@ -53,11 +53,10 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyB9VROM8dp-VpCtORlHdxB-4ink9RIM6Vo',
-    appId: '1:1011216158972:android:671a231c08f7ad69238779',
-    messagingSenderId: '1011216158972',
-    projectId: 'quizveda-53894',
-    storageBucket: 'quizveda-53894.firebasestorage.app',
+    apiKey: 'AIzaSyAQNa30Pdk14QL2fRG5DdqzUx0LHI6l6eg',
+    appId: '1:153460296720:android:a08f8e308fdbe5500fce95',
+    messagingSenderId: '153460296720',
+    projectId: 'quizveda-a591c',
+    storageBucket: 'quizveda-a591c.firebasestorage.app',
   );
-
 }

@@ -25,14 +25,15 @@ class _LoginScreenState extends State<LoginScreen> {
     _authService.authStateChanges.listen((User? user) {
       if (user != null && mounted) {
         // User is signed in, navigate to HomeScreen
-        _saveUserName(user.displayName); // Save display name to SharedPreferences
+        _saveUserName(user.displayName, user.photoURL); // Save display name to SharedPreferences
         Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const HomeScreen()));
       }
     });
   }
 
-  Future<void> _saveUserName(String? displayName) async {
+  Future<void> _saveUserName(String? displayName, String? image) async {
     await SharedPrefService.saveData(userNameKey, displayName ?? 'Guest');
+    await SharedPrefService.saveData(userImage, image ?? '');
   }
 
   Future<void> _handleSignIn() async {

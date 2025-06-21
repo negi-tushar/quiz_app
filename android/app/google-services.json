@@ -1,36 +1,26 @@
 {
   "project_info": {
-    "project_number": "1011216158972",
-    "project_id": "quizveda-53894",
-    "storage_bucket": "quizveda-53894.firebasestorage.app"
+    "project_number": "153460296720",
+    "project_id": "quizveda-a591c",
+    "storage_bucket": "quizveda-a591c.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1011216158972:android:671a231c08f7ad69238779",
+        "mobilesdk_app_id": "1:153460296720:android:a08f8e308fdbe5500fce95",
         "android_client_info": {
-          "package_name": "com.example.quiz_app"
+          "package_name": "com.tushar.quiz_app"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "1011216158972-f5eb9hcoajlqnj5e287cl3g5s13hklbg.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyB9VROM8dp-VpCtORlHdxB-4ink9RIM6Vo"
+          "current_key": "AIzaSyAQNa30Pdk14QL2fRG5DdqzUx0LHI6l6eg"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "1011216158972-f5eb9hcoajlqnj5e287cl3g5s13hklbg.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }
