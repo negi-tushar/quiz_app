@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:quiz_app/screens/quiz_screen.dart'; // Import QuizScreen
 import 'package:quiz_app/common/string.dart'; // Assuming this defines userNameKey
+import 'package:quiz_app/service/auth_service.dart';
 import 'package:quiz_app/service/shared_pref_service.dart'; // Assuming this provides SharedPrefService
 
 class HomeScreen extends StatefulWidget {
@@ -34,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late Animation<Offset> _moreOptionsSlide;
 
   String _userName = 'Guest';
+  String _userImage = '';
 
   final List<Map<String, String>> _categories = [
     {'name': 'General Knowledge', 'icon': 'lightbulb_outline'},
@@ -150,9 +152,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Future<void> _loadUserName() async {
     final storedName = await SharedPrefService.getData(userNameKey);
+    final storeImage = await SharedPrefService.getData(userImage);
     if (mounted) {
       setState(() {
         _userName = storedName ?? 'Guest';
+        _userImage = storeImage ?? '';
       });
     }
   }
@@ -213,30 +217,43 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
-              // Provides spacing from the top system bar and AppBar height
               child: SizedBox(height: AppBar().preferredSize.height + MediaQuery.of(context).padding.top - 60),
             ),
             SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10.0),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   // Animated welcome text
-                  FadeTransition(
-                    opacity: _welcomeOpacityAnimation,
-                    child: SlideTransition(
-                      position: _welcomeSlideAnimation,
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 20.0),
-                        child: Text(
-                          'Hello, $_userName',
-                          style: textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.primary,
-                            fontSize: 25,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      FadeTransition(
+                        opacity: _welcomeOpacityAnimation,
+                        child: SlideTransition(
+                          position: _welcomeSlideAnimation,
+                          child: Text(
+                            'Hello, $_userName',
+                            style: textTheme.headlineLarge?.copyWith(
+                              fontSize: 30,
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.primary,
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                      if (_userImage.isNotEmpty)
+                        InkWell(
+                          onLongPress: () {
+                            AuthService().signOut().then((_) {
+                              ScaffoldMessenger.of(
+                                context,
+                              ).showSnackBar(const SnackBar(content: Text('Logged out successfully!')));
+                              Navigator.of(context).pushReplacementNamed('/login');
+                            });
+                          },
+                          child: CircleAvatar(radius: 20, backgroundImage: NetworkImage(_userImage)),
+                        ),
+                    ],
                   ),
 
                   // Explore Categories Section (Animated)
@@ -265,6 +282,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             height: 140,
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
+                              shrinkWrap: true,
                               itemCount: _categories.length,
                               itemBuilder: (context, index) {
                                 final category = _categories[index];
@@ -312,7 +330,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             10,
                             10,
                             Icons.flash_on_rounded,
-                            colorScheme.primary,
+                            Colors.brown.shade300,
                           ),
                           const SizedBox(height: 15),
                           _buildQuickQuizButton(
@@ -392,15 +410,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                           const SizedBox(height: 20),
                           _buildOptionCard(context, 'Browse All Quizzes', Icons.list_alt_rounded, () {
-                            ScaffoldMessenger.of(
-                              context,
-                            ).showSnackBar(const SnackBar(content: Text('Browse All Quizzes! (Coming soon)')));
+                            Navigator.of(context).pushNamed('/allQuizzes');
                           }),
                           const SizedBox(height: 15),
                           _buildOptionCard(context, 'Leaderboard', Icons.leaderboard_rounded, () {
-                            ScaffoldMessenger.of(
-                              context,
-                            ).showSnackBar(const SnackBar(content: Text('Leaderboard! (Coming soon)')));
+                            Navigator.of(context).pushNamed('/leaderboard');
                           }),
                           const SizedBox(height: 30),
                         ],

@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class Question {
   final String id;
   final String questionText;
@@ -26,4 +28,27 @@ class Question {
       category: json['category'] as String,
     );
   }
+}
+
+// A simple model for each quiz entry
+class QuizEntry {
+  final String id;
+  final String title;
+  final String description;
+  final String category; // e.g., "General Knowledge", "Science"
+  final int numberOfQuestions;
+  final int questionTimerSeconds;
+  final IconData icon; // Icon to display for this quiz
+  final Color? color; // Optional accent color for the card
+
+  QuizEntry({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.category,
+    required this.numberOfQuestions,
+    required this.questionTimerSeconds,
+    required this.icon,
+    this.color,
+  });
 }

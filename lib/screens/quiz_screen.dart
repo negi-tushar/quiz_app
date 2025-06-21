@@ -1,22 +1,25 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
-import 'dart:ui'; // For ImageFilter.blur
+import 'dart:ui';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // For HapticFeedback
-import 'package:quiz_app/common/quiz_data.dart'; // User's specified path
-import 'package:quiz_app/model/quiz_model.dart'; // User's specified path
+import 'package:quiz_app/model/quiz_model.dart'; // Your Question model
 import 'package:quiz_app/screens/result_screen.dart';
-import 'package:quiz_app/service/quiz_service.dart';
+import 'package:quiz_app/service/quiz_service.dart'; // Assuming QuizService provides question data
 
 class QuizScreen extends StatefulWidget {
   final int numberOfQuestions;
   final int questionTimerSeconds;
-  final String? category;
+  final String? category; // Optional category to filter questions
+  final String quizType; // Added: e.g., "Fast Quiz", "Daily Challenge", "General Knowledge Express"
 
-  const QuizScreen({super.key, required this.numberOfQuestions, required this.questionTimerSeconds, this.category});
+  const QuizScreen({
+    super.key,
+    required this.numberOfQuestions,
+    required this.questionTimerSeconds,
+    this.category,
+    this.quizType = 'General Quiz', // Default value
+  });
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -25,13 +28,15 @@ class QuizScreen extends StatefulWidget {
 class _QuizScreenState extends State<QuizScreen> {
   late List<Question> _questions;
   int _currentQuestionIndex = 0;
-  int _score = 0;
+  int _score = 0; // This variable now holds the OPTIMIZED SCORE
   String? _selectedAnswer;
   bool _isAnswerLocked = false;
 
   Timer? _timer;
   int _currentTimerSeconds = 0;
-  bool _isDataLoaded = false;
+  // bool _isDataLoaded = false; // Removed as its functionality is covered by _questions.isEmpty check
+
+  final int _basePointsPerCorrectAnswer = 1; // Define base points for a correct answer
 
   @override
   void initState() {
@@ -46,141 +51,164 @@ class _QuizScreenState extends State<QuizScreen> {
     super.dispose();
   }
 
-  // Load questions from the quizData string (from common/quiz_data.dart)
   void _loadQuestions() {
-    List<Question> fetchedQuestions;
-    if (widget.category != null) {
-      // Fetch random questions from the specified category
-      fetchedQuestions = QuizService.getRandomQuestionsByCategory(widget.category!, widget.numberOfQuestions);
-    } else {
-      // If no category specified (e.g., for general 'Quick Quizzes'),
-      // get random questions from all available questions.
-      final allAvailableQuestions = QuizService.getAllQuestions();
-      allAvailableQuestions.shuffle(); // Shuffle all
-      fetchedQuestions = allAvailableQuestions.sublist(
-        0,
-        widget.numberOfQuestions.clamp(0, allAvailableQuestions.length),
-      );
-    }
+    List<Question> allAvailableQuestions = QuizService.getAllQuestions();
 
-    if (fetchedQuestions.isEmpty) {
-      // Handle scenario where no questions could be loaded
+    // Filter questions by category if a category is provided
+    if (widget.category != null && widget.category!.isNotEmpty && widget.category != 'Daily Challenge') {
+      allAvailableQuestions = allAvailableQuestions.where((q) => q.category == widget.category).toList();
+      // Fallback: If no questions found for a specific category, use general questions.
+      if (allAvailableQuestions.isEmpty) {
+        debugPrint('No questions found for category: ${widget.category}. Using all questions.');
+        allAvailableQuestions = QuizService.getAllQuestions();
+      }
+    }
+    // Note: If widget.category is 'Daily Challenge', it's implied that QuizService
+    // or your data source provides unique daily challenge questions.
+    // For now, it will just pick random questions from the available pool.
+
+    allAvailableQuestions.shuffle(); // Shuffle for randomness
+
+    // Take only the required number of questions, clamping to available count
+    _questions = allAvailableQuestions.take(widget.numberOfQuestions).toList();
+
+    // Final fallback if no questions were loaded at all (e.g., quizData is empty)
+    if (_questions.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('No questions available for this quiz criteria.')));
+        ).showSnackBar(const SnackBar(content: Text('Error: No quiz questions could be loaded. Please try again.')));
         Navigator.of(context).pop(); // Go back to the previous screen (Home)
       });
       return; // Exit without setting state if no questions
     }
 
+    // Initialize state ONLY if questions were successfully loaded
     setState(() {
-      _questions = fetchedQuestions;
-      _isDataLoaded = true;
       _currentQuestionIndex = 0;
-      _score = 0;
+      _score = 0; // Ensure optimized score is reset on quiz start
     });
   }
 
-  // Starts or resets the timer for the current question
   void _startQuestionTimer() {
-    _timer?.cancel(); // Cancel any existing timer
-    _currentTimerSeconds = widget.questionTimerSeconds; // Reset timer for new question
+    _timer?.cancel();
+    _currentTimerSeconds = widget.questionTimerSeconds;
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_currentTimerSeconds > 0) {
         setState(() => _currentTimerSeconds--);
       } else {
         _timer?.cancel();
-        _handleTimeUp(); // Handle time running out
+        _handleTimeUp(); // Time ran out
       }
     });
   }
 
-  // Handles logic when the timer for a question runs out
   void _handleTimeUp() {
     if (!_isAnswerLocked) {
-      // If no answer was selected, mark as incorrect and auto-advance
       setState(() {
-        _selectedAnswer = null; // Indicate no answer was chosen
-        _isAnswerLocked = true; // Lock selection
+        _selectedAnswer = null; // No answer selected
+        _isAnswerLocked = true; // Lock interaction
+        // Score remains unchanged for timed-out/incorrect answers
       });
-      // Delay before moving to the next question to show feedback
-      Future.delayed(const Duration(seconds: 2), _nextQuestion);
+      Future.delayed(const Duration(seconds: 2), _nextQuestion); // Auto-advance
     }
   }
 
-  // Handles the user selecting an answer
   void _checkAnswer(String selectedAnswer) {
-    // Only proceed if an answer hasn't been selected yet for this question and timer hasn't run out
     if (_isAnswerLocked || _currentTimerSeconds == 0) return;
 
-    // Provide haptic feedback on selection
     HapticFeedback.selectionClick();
-    _timer?.cancel(); // Stop the timer as soon as an answer is selected
+    _timer?.cancel();
 
     setState(() {
-      _selectedAnswer = selectedAnswer; // Store the selected answer
-      _isAnswerLocked = true; // Lock further answer selection
+      _selectedAnswer = selectedAnswer;
+      _isAnswerLocked = true;
       final currentQuestion = _questions[_currentQuestionIndex];
+
       if (selectedAnswer == currentQuestion.correctAnswer) {
-        _score++; // Increment score if correct
+        // Calculate optimized score for this correct answer
+        // Score = Base points + (Remaining Time for Question)
+        int timeBonus = _currentTimerSeconds;
+        _score += _basePointsPerCorrectAnswer + timeBonus;
       }
+      // If incorrect, _score remains unchanged for this question.
     });
 
-    // Automatically move to the next question after a short delay
-    Future.delayed(const Duration(seconds: 2), _nextQuestion);
+    Future.delayed(const Duration(seconds: 2), _nextQuestion); // Auto-advance
   }
 
-  // Moves to the next question or ends the quiz
   void _nextQuestion() {
     setState(() {
-      _selectedAnswer = null; // Reset selected answer for the next question
-      _isAnswerLocked = false; // Unlock answer selection for the next question
+      _selectedAnswer = null;
+      _isAnswerLocked = false;
       if (_currentQuestionIndex < _questions.length - 1) {
-        _currentQuestionIndex++; // Move to the next question
-        _startQuestionTimer(); // Start timer for the new question
+        _currentQuestionIndex++;
+        _startQuestionTimer();
       } else {
-        // Quiz ended, show results
-        _showResultScreen();
+        _showResultScreen(); // End of quiz
       }
     });
   }
 
-  // Displays the quiz result screen
   void _showResultScreen() {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (ctx) => ResultScreen(
-          score: _score,
-          totalQuestions: _questions.length,
+          score: _score, // Pass the calculated OPTIMIZED SCORE
+          totalQuestions: _questions.length, // Total questions in this quiz instance
+          quizType: widget.quizType, // Pass the quiz type (e.g., 'Fast Quiz')
+          category: widget.category, // Pass the specific category (e.g., 'General Knowledge')
           onRetakeQuiz: () {
-            // Logic to go back to home or restart quiz
-            Navigator.popUntil(ctx, (route) => route.isFirst); // Example: Go back to the very first screen
-            // Or if you have a specific home screen route:
-            // Navigator.pushAndRemoveUntil(ctx, MaterialPageRoute(builder: (_) => HomeScreen()), (route) => false);
+            Navigator.popUntil(ctx, (route) => route.isFirst); // Go back to Home
           },
-          onReviewAnswers: () {},
+          onReviewAnswers: () {
+            ScaffoldMessenger.of(
+              ctx,
+            ).showSnackBar(const SnackBar(content: Text('Review answers functionality coming soon!')));
+          },
         ),
       ),
     );
   }
 
-  // Helper to determine the background color for the answer option containers
   Color _getOptionContainerColor(String option, ColorScheme colorScheme) {
     if (!_isAnswerLocked) {
-      // Default state: A subtle transparent frosted look
       return colorScheme.surface.withOpacity(0.15);
     }
     final currentQuestion = _questions[_currentQuestionIndex];
     if (option == currentQuestion.correctAnswer) {
-      return Colors.green.shade300.withOpacity(0.8); // Correct answer color
+      return Colors.green.shade300.withOpacity(0.8);
     }
     if (option == _selectedAnswer) {
-      return Colors.red.shade300.withOpacity(0.8); // Incorrect selected answer color
+      return Colors.red.shade300.withOpacity(0.8);
     }
-    // For other unselected options when an answer is locked, make them very subtle
     return colorScheme.surface.withOpacity(0.05);
+  }
+
+  Future<bool> _onWillPop() async {
+    return (await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Quit Quiz?'),
+            content: const Text('Are you sure you want to exit the current quiz? Your progress will be lost.'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('No', style: TextStyle(color: Colors.red)),
+              ),
+              TextButton(
+                onPressed: () {
+                  _timer?.cancel();
+                  Navigator.of(context).pop(true); // Pop the dialog
+                  Navigator.of(context).popUntil((route) => route.isFirst); // Go back to Home
+                },
+                child: const Text('Yes', style: TextStyle(color: Colors.green)),
+              ),
+            ],
+          ),
+        )) ??
+        false;
   }
 
   @override
@@ -189,72 +217,114 @@ class _QuizScreenState extends State<QuizScreen> {
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
 
-    // Show loading indicator if questions are not yet loaded
     if (_questions.isEmpty) {
       return Scaffold(
-        body: Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(colorScheme.primary))),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(colorScheme.primary)),
+              const SizedBox(height: 20),
+              Text('Loading Quiz...', style: textTheme.titleMedium?.copyWith(color: colorScheme.onBackground)),
+            ],
+          ),
+        ),
       );
     }
 
     final currentQuestion = _questions[_currentQuestionIndex];
 
     return PopScope(
-      canPop: false, // Prevent going back with system back button during quiz
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        _onWillPop(); // Call dialog for confirmation
+      },
       child: Scaffold(
-        // Main container with a modern gradient background
         body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: theme.brightness == Brightness.light
-                  ? [colorScheme.surfaceContainerHighest, colorScheme.surface]
-                  : [colorScheme.surfaceContainerHigh, colorScheme.surface],
-            ),
-          ),
-          child: Column(
+          color: theme.brightness == Brightness.light
+              ? Colors.white
+              : Colors.black38, // Use transparent to avoid default background color
+          // decoration: BoxDecoration(
+          //   gradient: LinearGradient(
+          //     begin: Alignment.topLeft,
+          //     end: Alignment.bottomRight,
+          //     colors: theme.brightness == Brightness.light
+          //         ? [colorScheme.surfaceContainerHighest, colorScheme.surface]
+          //         : [colorScheme.surfaceContainerHigh, colorScheme.surface],
+          //   ),
+          // ),
+          child: Stack(
             children: [
-              const SizedBox(height: 80),
-              // Linear Progress Indicator for Timer (moved to top)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10), // Rounded corners for progress bar
-                  child: LinearProgressIndicator(
-                    value: _currentTimerSeconds / widget.questionTimerSeconds,
-                    minHeight: 8, // Thicker progress bar
-                    backgroundColor: colorScheme.surface.withOpacity(0.3), // Background color of bar
-                    color: colorScheme.secondary, // Progress color
+              Column(
+                children: [
+                  const SizedBox(height: 80),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: LinearProgressIndicator(
+                        value: _currentTimerSeconds / widget.questionTimerSeconds,
+                        minHeight: 8,
+                        backgroundColor: colorScheme.surface.withOpacity(0.3),
+                        color: colorScheme.secondary,
+                      ),
+                    ),
                   ),
-                ),
+                  // const SizedBox(height: 10),
+                  // Padding(
+                  //   padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  //   child: Align(
+                  //     alignment: Alignment.centerLeft,
+                  //     child: Text(
+                  //       widget.category != null && widget.category!.isNotEmpty
+                  //           ? '${widget.category} Quiz'
+                  //           : widget.quizType, // Use quizType if category is null
+                  //       style: textTheme.headlineMedium?.copyWith(
+                  //         fontWeight: FontWeight.bold,
+                  //         color: colorScheme.onBackground,
+                  //         fontSize: 30,
+                  //       ),
+                  //     ),
+                  //   ),
+                  // ),
+                  const SizedBox(height: 20),
+                  _buildHeaderStats(theme, colorScheme, textTheme),
+                  const SizedBox(height: 20),
+                  Expanded(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 600),
+                      transitionBuilder: (Widget child, Animation<double> animation) {
+                        final offsetAnimation = Tween<Offset>(
+                          begin: const Offset(1.0, 0.0),
+                          end: Offset.zero,
+                        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
+                        final fadeAnimation = Tween<double>(
+                          begin: 0.0,
+                          end: 1.0,
+                        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeIn));
+                        return SlideTransition(
+                          position: offsetAnimation,
+                          child: FadeTransition(opacity: fadeAnimation, child: child),
+                        );
+                      },
+                      key: ValueKey(currentQuestion.id),
+                      child: _buildQuestionContainer(currentQuestion, textTheme, colorScheme),
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                ],
               ),
-
-              // Header Stats Section: Question, Score, Timer
-              _buildHeaderStats(theme, colorScheme, textTheme),
-              Flexible(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 600), // Slightly longer animation
-                  transitionBuilder: (Widget child, Animation<double> animation) {
-                    // Custom slide and fade transition
-                    final offsetAnimation = Tween<Offset>(
-                      begin: const Offset(1.0, 0.0), // Starts from right
-                      end: Offset.zero,
-                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
-                    final fadeAnimation = Tween<double>(
-                      begin: 0.0,
-                      end: 1.0,
-                    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeIn));
-                    return SlideTransition(
-                      position: offsetAnimation,
-                      child: FadeTransition(opacity: fadeAnimation, child: child),
-                    );
+              Positioned(
+                top: 40 + MediaQuery.of(context).padding.top,
+                right: 10,
+                child: IconButton(
+                  icon: Icon(Icons.close_rounded, size: 30, color: colorScheme.onBackground.withOpacity(0.7)),
+                  onPressed: () async {
+                    _onWillPop();
                   },
-                  // The key is essential for AnimatedSwitcher to recognize a content change
-                  key: ValueKey(currentQuestion.id),
-                  child: _buildQuestionContainer(currentQuestion, textTheme, colorScheme),
                 ),
               ),
-              const SizedBox(height: 30), // Increased bottom padding for aesthetic balance
             ],
           ),
         ),
@@ -265,40 +335,44 @@ class _QuizScreenState extends State<QuizScreen> {
   // Helper widget for the header stats (Question, Score, Timer)
   Widget _buildHeaderStats(ThemeData theme, ColorScheme colorScheme, TextTheme textTheme) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          // Frosted glass effect for the header container
-          color: colorScheme.surface.withAlpha(100),
+          color: colorScheme.surface.withOpacity(0.25),
           borderRadius: BorderRadius.circular(25),
+          border: Border.all(color: colorScheme.surface.withOpacity(0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              spreadRadius: 1,
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _buildStatItem('Question', '${_currentQuestionIndex + 1}/${_questions.length}', textTheme, colorScheme),
-            _buildStatItem('Score', '$_score', textTheme, colorScheme),
-            // Timer display as a distinct item
+            _buildStatItem('Score', '$_score', textTheme, colorScheme), // Displays optimized score
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: colorScheme.secondary, // Emphasized with secondary color
+                color: colorScheme.secondary,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
                     color: colorScheme.secondary.withOpacity(0.3),
                     spreadRadius: 1,
                     blurRadius: 5,
-                    offset: const Offset(0, 2),
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
               child: Text(
                 '${_currentTimerSeconds}s',
-                style: textTheme.titleMedium?.copyWith(
-                  color: colorScheme.onSecondary, // Text color on secondary
-                  fontWeight: FontWeight.bold,
-                ),
+                style: textTheme.titleMedium?.copyWith(color: colorScheme.onSecondary, fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -324,7 +398,7 @@ class _QuizScreenState extends State<QuizScreen> {
           style: textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
             color: colorScheme.onSurface,
-            fontSize: 20,
+            fontSize: 24,
           ),
         ),
       ],
@@ -334,85 +408,91 @@ class _QuizScreenState extends State<QuizScreen> {
   // Helper widget for the main question and options container
   Widget _buildQuestionContainer(Question question, TextTheme textTheme, ColorScheme colorScheme) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-      padding: const EdgeInsets.all(20), // Increased padding
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
-
-        borderRadius: BorderRadius.circular(15), // More rounded corners
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1), // Soft shadow
-            spreadRadius: 1,
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-        border: Border.all(
-          color: colorScheme.surface.withOpacity(0.4), // Subtle, light border
-          width: 1.5,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [colorScheme.surface.withOpacity(0.15), colorScheme.surface.withOpacity(0.05)],
         ),
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.1), spreadRadius: 1, blurRadius: 20, offset: const Offset(0, 10)),
+        ],
+        border: Border.all(color: colorScheme.surface.withOpacity(0.4), width: 1.5),
       ),
       child: SingleChildScrollView(
-        // Allows content to scroll if it overflows
         child: Column(
-          mainAxisSize: MainAxisSize.min, // Keep column compact
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
               question.questionText,
-              textAlign: TextAlign.start,
+              textAlign: TextAlign.center,
               style: textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w700,
                 color: colorScheme.onSurface,
-                fontSize: 20, // Slightly larger question text
+                fontSize: 24,
                 shadows: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 2, offset: const Offset(1, 1))],
               ),
             ),
-            const SizedBox(height: 20), // Increased spacing after question
-            // Display options as custom-styled interactive containers
-            ...question.options.map(
-              (option) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8), // Adjusted vertical padding
-                child: Material(
-                  // Provides Material Design visual responses (splash, highlight)
-                  color: _getOptionContainerColor(option, colorScheme), // Background color
-                  borderRadius: BorderRadius.circular(18), // Match inner container/InkWell
-                  child: InkWell(
-                    onTap: _isAnswerLocked || _currentTimerSeconds == 0
-                        ? null // Disable tap if answer is locked or time is up
-                        : () => _checkAnswer(option),
-                    borderRadius: BorderRadius.circular(18), // Match Material's border radius
-                    highlightColor: Colors.transparent, // Avoid default highlight color
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20), // Padding for text inside
-                      decoration: BoxDecoration(
+            const SizedBox(height: 35),
+            ...question.options
+                .map(
+                  (option) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Material(
+                      color: _getOptionContainerColor(option, colorScheme),
+                      borderRadius: BorderRadius.circular(18),
+                      elevation: 4,
+                      shadowColor: Colors.black.withOpacity(0.2),
+                      child: InkWell(
+                        onTap: _isAnswerLocked || _currentTimerSeconds == 0 ? null : () => _checkAnswer(option),
                         borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: _selectedAnswer == option && _isAnswerLocked
-                              ? (_selectedAnswer == question.correctAnswer
-                                    ? Colors.green.shade700
-                                    : Colors.red.shade700)
-                              : colorScheme.primary.withAlpha(100), // Default border for options
-                          width: _selectedAnswer == option && _isAnswerLocked
-                              ? 3
-                              : 1.0, // Thicker border on selected/feedback
-                        ),
-                      ),
-                      child: Text(
-                        option,
-                        textAlign: TextAlign.start,
-                        style: textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w500,
-                          color: colorScheme.onSurface,
-                          fontSize: 17,
+                        splashColor: colorScheme.primary.withOpacity(0.3),
+                        highlightColor: Colors.transparent,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: _selectedAnswer == option && _isAnswerLocked
+                                  ? (_selectedAnswer == _questions[_currentQuestionIndex].correctAnswer
+                                        ? Colors.green.shade700
+                                        : Colors.red.shade700)
+                                  : colorScheme.surface.withOpacity(0.4),
+                              width: _selectedAnswer == option && _isAnswerLocked ? 3 : 1.0,
+                            ),
+                          ),
+                          child: Text(
+                            option,
+                            textAlign: TextAlign.center,
+                            style: textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: colorScheme.onSurface,
+                              fontSize: 18,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ),
-            ),
+                )
+                .toList(),
+            const SizedBox(height: 25),
+            // if (_isAnswerLocked)
+            //   Text(
+            //     _selectedAnswer == null && _currentTimerSeconds == 0
+            //         ? 'Time\'s up! The correct answer was: ${question.correctAnswer}'
+            //         : (question.explanation?.isNotEmpty == true ? 'Explanation: ${question.explanation}' : ''),
+            //     style: textTheme.bodyLarge?.copyWith(
+            //       fontStyle: FontStyle.italic,
+            //       color: colorScheme.onSurface.withOpacity(0.8),
+            //       fontSize: 16,
+            //     ),
+            //     textAlign: TextAlign.center,
+            //   ),
           ],
         ),
       ),

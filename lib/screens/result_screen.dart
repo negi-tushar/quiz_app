@@ -1,13 +1,19 @@
 // lib/screens/result_screen.dart
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/percent_indicator.dart'; // For the circular progress bar
+import 'package:quiz_app/service/auth_service.dart';
+import 'package:quiz_app/service/leaderboard_service.dart';
+import 'package:quiz_app/common/string.dart'; // For userNameKey
+import 'package:quiz_app/service/shared_pref_service.dart'; // For SharedPrefService
+import 'package:quiz_app/screens/leaderboard_screen.dart'; // Import new LeaderboardScreen
 
-class ResultScreen extends StatelessWidget {
-  final int score;
+class ResultScreen extends StatefulWidget {
+  final int score; // This is now the optimized score (base points + time bonus)
   final int totalQuestions;
+  final String quizType; // Passed from QuizScreen
+  final String? category; // Passed from QuizScreen (optional)
   final VoidCallback onRetakeQuiz;
-  // Optional: A callback to navigate to a screen that reviews answers
-  final VoidCallback? onReviewAnswers;
+  final VoidCallback? onReviewAnswers; // Optional callback for review
 
   const ResultScreen({
     super.key,
@@ -15,10 +21,47 @@ class ResultScreen extends StatelessWidget {
     required this.totalQuestions,
     required this.onRetakeQuiz,
     this.onReviewAnswers, // Make this optional
+    this.quizType = 'General Quiz', // Default value
+    this.category,
   });
 
+  @override
+  State<ResultScreen> createState() => _ResultScreenState();
+}
+
+class _ResultScreenState extends State<ResultScreen> {
+  final LeaderboardService _leaderboardService = LeaderboardService();
+  bool _isSubmittingScore = false;
+  bool _scoreSubmitted = false;
+  String? _submissionError;
+
+  // Assuming _basePointsPerCorrectAnswer was 100 in QuizScreen
+  final int _basePointsPerCorrectAnswer = 10;
+  late int _correctAnswersCount; // Will store the count of truly correct answers
+
+  @override
+  void initState() {
+    super.initState();
+
+    _correctAnswersCount = widget.score ~/ _basePointsPerCorrectAnswer;
+    if (_correctAnswersCount > widget.totalQuestions) {
+      _correctAnswersCount = widget.totalQuestions;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (widget.score > 0) {
+        // Only submit score if it's greater than 0
+        await _submitScore();
+      } else {
+        setState(() {
+          _scoreSubmitted = false; // Reset score submission state
+        });
+      }
+    });
+  }
+
   String get _resultMessage {
-    double percentage = (score / totalQuestions) * 100;
+    double percentage = (_correctAnswersCount / widget.totalQuestions) * 100;
     if (percentage >= 80) {
       return 'Excellent Job!';
     } else if (percentage >= 60) {
@@ -31,7 +74,7 @@ class ResultScreen extends StatelessWidget {
   }
 
   Color _getScoreColor(BuildContext context) {
-    double percentage = (score / totalQuestions) * 100;
+    double percentage = (_correctAnswersCount / widget.totalQuestions) * 100;
     if (percentage >= 80) {
       return Theme.of(context).colorScheme.tertiary; // Often a vibrant accent
     } else if (percentage >= 60) {
@@ -43,153 +86,289 @@ class ResultScreen extends StatelessWidget {
     }
   }
 
+  Future<void> _submitScore() async {
+    setState(() {
+      _isSubmittingScore = true;
+      _submissionError = null;
+    });
+
+    final currentUser = AuthService().getCurrentUser();
+    if (currentUser == null) {
+      setState(() {
+        _isSubmittingScore = false;
+        _submissionError = 'You must be logged in to submit scores.';
+      });
+      return;
+    }
+
+    // Get the user's display name (either from SharedPrefs or Firebase Auth)
+    String userName = await SharedPrefService.getData(userNameKey) as String? ?? currentUser.displayName ?? 'Anonymous';
+
+    try {
+      await _leaderboardService.addOrUpdateUserScore(
+        userId: currentUser.uid,
+        userName: userName,
+        imageUrl: currentUser.photoURL ?? '',
+        newOptimizedScore: widget.score, // Submit the optimized score
+      );
+      setState(() {
+        _scoreSubmitted = true;
+        _isSubmittingScore = false;
+      });
+      if (mounted) {
+        // Check if the widget is still in the tree before showing SnackBar
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Score submitted successfully!')));
+      }
+    } catch (e) {
+      debugPrint('Error submitting score: $e');
+      setState(() {
+        _submissionError = 'Failed to submit score: ${e.toString()}';
+        _isSubmittingScore = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to submit score: $_submissionError')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final double percentage = (score / totalQuestions);
-    final String scoreText = '${(percentage * 100).toStringAsFixed(0)}%';
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    // Percentage for the CircularPercentIndicator (based on correct answers)
+    final double accuracyPercentage = (widget.totalQuestions > 0)
+        ? (_correctAnswersCount / widget.totalQuestions)
+        : 0.0;
+    final String accuracyText = '${(accuracyPercentage * 100).toStringAsFixed(0)}%';
 
     return PopScope(
-      canPop: false,
+      canPop: false, // Prevents going back from results using system back button
       child: Scaffold(
-        appBar: AppBar(title: const Text('Quiz Results'), centerTitle: true, automaticallyImplyLeading: false),
-        body: Center(
-          child: SingleChildScrollView(
-            // Use SingleChildScrollView for responsiveness on smaller screens
-            padding: const EdgeInsets.all(24.0), // Increased padding
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Animated Score Display (using CircularPercentIndicator)
-                CircularPercentIndicator(
-                  radius: 100.0, // Size of the circle
-                  lineWidth: 18.0, // Thickness of the progress line
-                  percent: percentage,
-                  center: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        scoreText,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold, color: _getScoreColor(context)),
-                      ),
-                      Text(
-                        '$score / $totalQuestions',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.titleLarge?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                      ),
-                    ],
-                  ),
-                  progressColor: _getScoreColor(context),
-                  backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  circularStrokeCap: CircularStrokeCap.round,
-                  animation: true,
-                  animationDuration: 1200,
-                  curve: Curves.easeInOut,
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: theme.brightness == Brightness.light
+                  ? [colorScheme.surfaceContainerHighest, colorScheme.surface]
+                  : [colorScheme.surfaceContainerHigh, colorScheme.surface],
+            ),
+          ),
+          child: Column(
+            children: [
+              SizedBox(height: MediaQuery.of(context).padding.top + 20), // Top padding for status bar/safe area
+              Text(
+                'Quiz Results',
+                style: textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onBackground,
+                  fontSize: 30,
                 ),
-                const SizedBox(height: 40),
-
-                // Result Message Card
-                Card(
-                  elevation: 6, // Increased elevation for a more modern look
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20.0), // More rounded corners
-                  ),
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 40.0, horizontal: 25.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min, // Keep column size to its children
-                      children: [
-                        Icon(
-                          score >= totalQuestions * 0.8 ? Icons.emoji_events_rounded : Icons.lightbulb_outline_rounded,
-                          size: 60,
-                          color: _getScoreColor(context),
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          _resultMessage,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: _getScoreColor(context),
+                textAlign: TextAlign.center,
+              ),
+              Expanded(
+                child: Center(
+                  child: SingleChildScrollView(
+                    // Added SingleChildScrollView
+                    padding: const EdgeInsets.all(24.0),
+                    child: Container(
+                      // Replaced Card with Container for consistency
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.all(30.0),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface.withOpacity(0.9), // Use themed surface color
+                        borderRadius: BorderRadius.circular(25), // More rounded corners
+                        boxShadow: [
+                          BoxShadow(
+                            color: colorScheme.shadow.withOpacity(0.15),
+                            spreadRadius: 2,
+                            blurRadius: 15,
+                            offset: const Offset(0, 8),
                           ),
-                        ),
-                        const SizedBox(height: 15),
-                        Text(
-                          'You answered $score out of $totalQuestions questions correctly.',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 40),
-
-                // Action Buttons
-                Column(
-                  children: [
-                    SizedBox(
-                      width: double.infinity, // Make button span full width
-                      child: ElevatedButton.icon(
-                        onPressed: onRetakeQuiz,
-                        icon: const Icon(Icons.home_rounded),
-                        label: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12.0),
-                          child: Text(
-                            'Go to Home Screen',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min, // Keep column size to its children
+                        children: [
+                          Text(
+                            _resultMessage, // Message based on accuracy
+                            textAlign: TextAlign.center,
+                            style: textTheme.headlineMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onPrimary, // Text color from theme
+                              color: _getScoreColor(context), // Color based on accuracy
+                              fontSize: 32,
                             ),
                           ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.primary, // Button color from theme
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.0), // Rounded button corners
+                          const SizedBox(height: 25),
+
+                          // Optimized Score Display
+                          Text(
+                            'Your Score',
+                            style: textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurface,
+                            ),
                           ),
-                          elevation: 5,
-                        ),
+                          const SizedBox(height: 5),
+                          Text(
+                            '${widget.score}', // Display the calculated optimized score
+                            style: textTheme.displaySmall?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              color: colorScheme.primary, // Primary color for optimized score
+                              fontSize: 56, // Larger font size
+                              shadows: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.15),
+                                  blurRadius: 5,
+                                  offset: const Offset(2, 2),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 25), // Spacing before other stats
+                          // Accurate Score (Correct Answers) and Percentage
+                          CircularPercentIndicator(
+                            radius: 80.0, // Size of the circle
+                            lineWidth: 15.0, // Thickness of the progress line
+                            percent: accuracyPercentage, // Based on correct answers
+                            animation: true,
+                            animationDuration: 1200,
+                            curve: Curves.easeInOut,
+                            center: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  accuracyText,
+                                  style: textTheme.headlineSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: _getScoreColor(context),
+                                  ),
+                                ),
+                                Text(
+                                  'Correct: $_correctAnswersCount / ${widget.totalQuestions}',
+                                  style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                                ),
+                              ],
+                            ),
+                            progressColor: _getScoreColor(context), // Color based on accuracy
+                            backgroundColor: colorScheme.surfaceVariant.withOpacity(0.5), // Background of progress bar
+                            circularStrokeCap: CircularStrokeCap.round,
+                          ),
+                          const SizedBox(height: 30),
+
+                          // Quiz Type and Category Display
+                          // Text(
+                          //   'Quiz Type: ${widget.quizType}',
+                          //   style: textTheme.titleMedium?.copyWith(color: colorScheme.onSurface.withOpacity(0.8)),
+                          // ),
+                          // Text(
+                          //   'Category: ${widget.category ?? 'Not Specified'}',
+                          //   style: textTheme.titleMedium?.copyWith(color: colorScheme.onSurface.withOpacity(0.8)),
+                          // ),
+                          // const SizedBox(height: 30),
+
+                          // Submit Score Button
+                          _isSubmittingScore
+                              ? CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                                )
+                              : (_scoreSubmitted
+                                    ? Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.check_circle_rounded, color: Colors.green.shade500, size: 28),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            'Score Submitted!',
+                                            style: textTheme.titleMedium?.copyWith(color: Colors.green.shade500),
+                                          ),
+                                        ],
+                                      )
+                                    : SizedBox(
+                                        width: double.infinity, // Full width button
+                                        child: ElevatedButton.icon(
+                                          onPressed: _submitScore,
+                                          icon: Icon(Icons.leaderboard_rounded, color: colorScheme.onPrimary),
+                                          label: Padding(
+                                            padding: const EdgeInsets.symmetric(vertical: 12.0),
+                                            child: Text(
+                                              'Submit Score',
+                                              style: textTheme.labelLarge?.copyWith(fontSize: 18),
+                                            ),
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: colorScheme.primary,
+                                            foregroundColor: colorScheme.onPrimary,
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                                            elevation: 5,
+                                          ),
+                                        ),
+                                      )),
+                          if (_submissionError != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 10),
+                              child: Text(
+                                _submissionError!,
+                                style: textTheme.bodyMedium?.copyWith(color: colorScheme.error),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          const SizedBox(height: 20),
+
+                          // Go to Home Screen Button
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: widget.onRetakeQuiz,
+                              icon: const Icon(Icons.home_rounded),
+                              label: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 12.0),
+                                child: Text('Back to Home', style: textTheme.labelLarge?.copyWith(fontSize: 18)),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: colorScheme.secondary, // Secondary color for neutral action
+                                foregroundColor: colorScheme.onSecondary,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                                elevation: 5,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 15),
+
+                          // View Leaderboard Button
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.of(
+                                  context,
+                                ).push(MaterialPageRoute(builder: (context) => const LeaderboardScreen()));
+                              },
+                              icon: const Icon(Icons.leaderboard_rounded),
+                              label: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 12.0),
+                                child: Text('View Leaderboard', style: textTheme.labelLarge?.copyWith(fontSize: 18)),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: colorScheme.tertiary, // Tertiary color for another action
+                                foregroundColor: colorScheme.onTertiary,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                                elevation: 5,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                        ],
                       ),
                     ),
-                    // if (onReviewAnswers != null) ...[
-                    //   // Only show if onReviewAnswers callback is provided
-                    //   const SizedBox(height: 20),
-                    //   SizedBox(
-                    //     width: double.infinity,
-                    //     child: OutlinedButton.icon(
-                    //       onPressed: onReviewAnswers,
-                    //       icon: const Icon(Icons.history_edu_rounded),
-                    //       label: Padding(
-                    //         padding: const EdgeInsets.symmetric(vertical: 12.0),
-                    //         child: Text(
-                    //           'Review Answers',
-                    //           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    //             fontWeight: FontWeight.bold,
-                    //             color: Theme.of(context).colorScheme.primary,
-                    //           ),
-                    //         ),
-                    //       ),
-                    //       style: OutlinedButton.styleFrom(
-                    //         side: BorderSide(
-                    //           color: Theme.of(context).colorScheme.primary,
-                    //           width: 2,
-                    //         ), // Primary color border
-                    //         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                    //         elevation: 0,
-                    //       ),
-                    //     ),
-                    //   ),
-                    //    ],
-                  ],
+                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

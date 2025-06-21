@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:quiz_app/common/methods.dart';
 import 'package:quiz_app/common/string.dart';
 import 'package:quiz_app/screens/homescreen.dart';
 import 'package:quiz_app/service/auth_service.dart';
@@ -25,15 +26,18 @@ class _LoginScreenState extends State<LoginScreen> {
     _authService.authStateChanges.listen((User? user) {
       if (user != null && mounted) {
         // User is signed in, navigate to HomeScreen
-        _saveUserName(user.displayName, user.photoURL); // Save display name to SharedPreferences
+        _saveUserName(user.displayName, user.photoURL, user.uid); // Save display name to SharedPreferences
         Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const HomeScreen()));
       }
     });
   }
 
-  Future<void> _saveUserName(String? displayName, String? image) async {
-    await SharedPrefService.saveData(userNameKey, displayName ?? 'Guest');
+  Future<void> _saveUserName(String? displayName, String? image, String id) async {
+    await SharedPrefService.saveData(userNameKey, getFirstName(displayName ?? 'Guest'));
     await SharedPrefService.saveData(userImage, image ?? '');
+    print("ID:==================> $id");
+    await SharedPrefService.saveData(userID, id);
+    print("ID:==================>2 ${SharedPrefService.getData(userID)}");
   }
 
   Future<void> _handleSignIn() async {
@@ -88,6 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               Text(
                 'Welcome Back to QuizVeda',
+                textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium!.copyWith(fontWeight: FontWeight.bold),
               ),
 
